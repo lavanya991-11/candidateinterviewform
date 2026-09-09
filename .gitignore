@@ -1,0 +1,21 @@
+# --- Secrets ---------------------------------------------------------------
+.env
+.env.bak
+.env.local
+
+# --- Node ------------------------------------------------------------------
+node_modules/
+
+# --- AL / Business Central build output & caches ---------------------------
+# Microsoft symbol packages and the compiled extension are build artifacts.
+*.app
+.alpackages/
+.altestrunner/
+.snapshots/
+.vscode/.alcache/
+rad.json
+
+# --- OS --------------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store

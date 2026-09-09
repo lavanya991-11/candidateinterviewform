@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Delivery_App",
+            "request": "launch",
+            "type": "al",
+            "environmentType": "Sandbox",
+            "environmentName": "Delivery_App",
+            "startupObjectId": 70143,
+            "startupObjectType": "Page",
+            "breakOnError": "All",
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "tenant": "c4fcf5c8-ba04-4cc4-b972-091c2e3d6239",
+            "enableSqlInformationDebugger": true,
+            "schemaUpdateMode": "Recreate"
+            
+        }
+    ]
+}

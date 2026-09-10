@@ -6,6 +6,20 @@ const config = require('../config');
 function describe(err) {
   const status = err.response?.status;
 
+  // The photo is mandatory and is stored before the applicant is answered, so a
+  // failure there is not a general save failure - it is the one thing the applicant
+  // can do something about, and the message says so rather than leaving them to
+  // guess. The entry number follows from the partialSave block below.
+  if (err.photoFailed) {
+    return {
+      status: 502,
+      code: 'PHOTO_NOT_STORED',
+      message: 'Your candidate photo could not be uploaded, so the application was not '
+        + 'submitted.',
+      log: err.response?.data?.error?.message || err.message,
+    };
+  }
+
   // Rejected by the CORS origin check in server.js.
   if (/^Origin .* is not allowed$/.test(err.message || '')) {
     return { status: 403, code: 'ORIGIN_NOT_ALLOWED', message: err.message, log: err.message };

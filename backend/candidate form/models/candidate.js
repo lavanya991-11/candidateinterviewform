@@ -142,20 +142,22 @@ async function postLines(candidateId, candidate) {
 }
 
 // The Candidate Attachment Type enum in BC only has Other/Education/Registration/
-// Experience - there is no Photo member - so a photo that has to travel as an
-// attachment is filed under Other, the closest fit. That is only the fallback now:
-// the photo's real home is the Candidate Picture, written by postPicture().
+// Experience - there is no Photo member - so a file labelled Photo would be refused.
+// The photo no longer travels this way at all: it is stored on the Candidate Picture
+// before the applicant is answered, and left out of the attachment list. The mapping
+// stays as the safety net for a file that still reaches here under that name.
 const ATTACHMENT_TYPE_TO_BC = { Photo: 'Other' };
 
 // "Candidate Picture" is a Media field, published on the API page as a read-only
 // GUID, so there is no stream to write bytes to. The setPictureBase64 action is the
 // way in. BC re-encodes the image on import, and rejects anything that is not valid
 // Base64 with its own error.
+// The photo is mandatory, so nothing here is worked around: a photo that cannot be
+// stored fails the submission rather than being filed somewhere else and forgotten.
 async function postPicture(candidateId, photo) {
-  // Nothing to store, and saying otherwise is worse than saying nothing: an empty
-  // Base64 string is a valid request that clears the picture and answers 200, so the
-  // photo would be dropped from the attachment list as though it had been filed.
-  if (!photo || !photo.buffer?.length) return false;
+  if (!photo || !photo.buffer?.length) {
+    throw new Error('The candidate photo did not reach Business Central.');
+  }
   try {
     // Sent as a data URI rather than bare Base64 so that the real content type
     // travels with it: SetPictureFromBase64 reads the type off the prefix and
@@ -165,15 +167,14 @@ async function postPicture(candidateId, photo) {
         pictureBase64: `data:${photo.mimetype};base64,${photo.buffer.toString('base64')}`,
       },
     });
-    return true;
   } catch (err) {
-    // Same reasoning as the submit action below: where the extension predates the
-    // action the application still arrived in full, and the photo is filed as an
-    // attachment instead of being lost.
-    if (err.response?.status !== 404) throw err;
-    console.warn('[bc] candidates/Microsoft.NAV.setPictureBase64 is not published - '
-      + 'the photo was filed as an attachment instead.');
-    return false;
+    // An extension that predates the action cannot store a photo at all, which is
+    // worth saying plainly rather than reporting it as a rejected image.
+    if (err.response?.status === 404) {
+      throw new Error('candidates/Microsoft.NAV.setPictureBase64 is not published in '
+        + 'Business Central, so the candidate photo cannot be stored.');
+    }
+    throw err;
   }
 }
 
@@ -213,21 +214,17 @@ async function submitApplication(candidateId) {
 // unhandled rejection would take the process down with it. A failure leaves the
 // application in BC as a draft, which is the same state the missing-submit-action
 // fallback has always produced, and recruitment can finish it there.
-async function finishInBc(created, candidate) {
+async function finishInBc(created, candidate, photo) {
   const { id, entryNo } = created;
   const reason = (err) => err.response?.data?.error?.message || err.message;
 
   try {
     await postLines(id, candidate);
 
-    // Once the photo is on the Candidate Picture there is no reason to keep a second
-    // copy of it in the attachment list, so it only stays there if the action is gone.
-    const photo = (candidate.attachments || []).find((f) => f.attachmentType === 'Photo');
-    const onPicture = await postPicture(id, photo);
-    await postAttachments(
-      entryNo,
-      onPicture ? candidate.attachments.filter((f) => f !== photo) : candidate.attachments,
-    );
+    // The photo is already on the Candidate Picture by now - it is stored before the
+    // applicant is answered - so there is no reason to keep a second copy of it in
+    // the attachment list.
+    await postAttachments(entryNo, (candidate.attachments || []).filter((f) => f !== photo));
   } catch (err) {
     console.error(`[bc] entry ${entryNo} was created but could not be completed: ${reason(err)}. `
       + 'It is a draft in Business Central, and the applicant has already been told the '
@@ -251,9 +248,23 @@ async function finishInBc(created, candidate) {
 async function createInBc(candidate) {
   const created = await bcClient.request('post', 'candidates', { data: candidatePayload(candidate) });
 
-  // The entry number is on the row the moment it is created, so the applicant is
-  // answered from here and does not wait for the rest of the work.
-  finishInBc(created, candidate)
+  // The photo cannot travel in the insert - it is a Media field, which OData publishes
+  // as a resource of its own - so it goes up the moment the row exists, and before the
+  // applicant is answered. An application without its photo is not one to thank anyone
+  // for: Business Central refuses to submit it, so the reply carries the reason and the
+  // entry number instead of a thank you.
+  const photo = (candidate.attachments || []).find((f) => f.attachmentType === 'Photo');
+  try {
+    await postPicture(created.id, photo);
+  } catch (err) {
+    err.photoFailed = true;
+    err.partialSave = { entryNo: created.entryNo };
+    throw err;
+  }
+
+  // The rest is another dozen round trips that change nothing the applicant is told,
+  // so it runs behind the response.
+  finishInBc(created, candidate, photo)
     .catch((err) => console.error('[bc] completing an application failed:', err.message));
 
   // The row exists and is numbered but is still a draft at this point, so the

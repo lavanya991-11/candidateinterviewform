@@ -71,7 +71,9 @@
             <label for="title">Full Name <em>*</em></label>
             <!-- These match the Candidate Salutation enum in Business Central. -->
             <select id="title" name="title" data-label="Title" required>
-              <option value="">Title</option>
+              <!-- Disabled and hidden so the placeholder cannot be chosen back: a real
+                   salutation is mandatory, and the blank one is only the resting state. -->
+              <option value="" selected disabled hidden>Title</option>
               <option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Miss</option><option>Dr.</option>
             </select>
             <p class="field-error" data-error-for="title" hidden>Please select a title.</p>

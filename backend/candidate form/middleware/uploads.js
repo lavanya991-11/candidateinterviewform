@@ -1,3 +1,4 @@
+const path = require('path');
 const multer = require('multer');
 
 // Mirrors what table 70123 "Candidate Attachment" accepts in Business Central, so a
@@ -10,6 +11,38 @@ const ALLOWED = {
   'image/png': 'png',
 };
 
+// A browser does not read the file to work out its type. On Windows it looks the
+// extension up in the registry, and a missing "Content Type" value under .jpg or .png
+// leaves the type blank or generic - the file is a perfectly good photo, but it arrives
+// as application/octet-stream and would be turned away. Where the declared type says
+// nothing, the extension decides instead, and the file carries the resolved type from
+// here on: the photo travels to Business Central inside a data URI, and each attachment
+// is written to its stream with a content type, so an octet-stream would follow it in.
+const EXTENSION_TYPES = {
+  '.pdf': 'application/pdf',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+};
+
+// Older aliases that some browsers still send for the same two image formats.
+const TYPE_ALIASES = {
+  'image/jpg': 'image/jpeg',
+  'image/pjpeg': 'image/jpeg',
+  'image/x-png': 'image/png',
+};
+
+// A type that identifies nothing. Anything else is taken at its word and, if it is not
+// a type we accept, refused - an extension does not override a type the browser is sure of.
+const VAGUE_TYPES = ['', 'application/octet-stream', 'binary/octet-stream'];
+
+function resolveMimeType(file) {
+  const declared = (file.mimetype || '').toLowerCase().split(';')[0].trim();
+  const canonical = TYPE_ALIASES[declared] || declared;
+  if (!VAGUE_TYPES.includes(canonical)) return canonical;
+  return EXTENSION_TYPES[path.extname(file.originalname || '').toLowerCase()] || canonical;
+}
+
 // Each dropzone posts under its own field name, which is also the Candidate Attachment
 // Type enum member the file is filed under in BC.
 const FIELDS = ['Education', 'Registration', 'Experience', 'Photo'];
@@ -21,10 +54,14 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_BYTES, files: MAX_FILES },
   fileFilter(req, file, cb) {
-    if (!ALLOWED[file.mimetype]) {
+    const mimetype = resolveMimeType(file);
+    if (!ALLOWED[mimetype]) {
       cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
       return;
     }
+    // multer hands the same object on to req.files, so the resolved type is what
+    // everything downstream sees.
+    file.mimetype = mimetype;
     cb(null, true);
   },
 });
@@ -78,5 +115,5 @@ function uploadErrorHandler(err, req, res, next) {
 }
 
 module.exports = {
-  acceptAttachments, unpackApplication, uploadErrorHandler, FIELDS, MAX_FILE_BYTES,
+  acceptAttachments, unpackApplication, uploadErrorHandler, resolveMimeType, FIELDS, MAX_FILE_BYTES,
 };

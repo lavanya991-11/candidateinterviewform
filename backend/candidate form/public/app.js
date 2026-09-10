@@ -355,13 +355,45 @@ const allowedTypesFor = (zone) => (
   zone.dataset.attachmentType === 'Photo' ? IMAGE_TYPES : ALLOWED_TYPES
 );
 
+// A browser does not read a file to work out its type. On Windows it looks the
+// extension up in the registry, and a missing "Content Type" value under .jpg or .png
+// leaves the type blank or generic - so a perfectly good photo can arrive as
+// application/octet-stream and be turned away as "not a JPG or PNG". Where the type
+// says nothing the extension decides instead; where the browser is sure of a type it
+// is taken at its word, so an extension cannot talk an unsupported file through.
+const EXTENSION_TYPES = {
+  pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+};
+const TYPE_ALIASES = {
+  'image/jpg': 'image/jpeg', 'image/pjpeg': 'image/jpeg', 'image/x-png': 'image/png',
+};
+const VAGUE_TYPES = ['', 'application/octet-stream', 'binary/octet-stream'];
+
+function resolvedType(file) {
+  const declared = (file.type || '').toLowerCase().split(';')[0].trim();
+  const canonical = TYPE_ALIASES[declared] || declared;
+  if (!VAGUE_TYPES.includes(canonical)) return canonical;
+  const extension = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
+  return EXTENSION_TYPES[extension] || canonical;
+}
+
+// The resolved type has to travel with the file, not just be known here: the server
+// reads File.type off the multipart part, and shrinkImage() decides from it whether
+// there is an image to scale down at all.
+function retypedFile(file) {
+  const type = resolvedType(file);
+  if (type === file.type) return file;
+  return new File([file], file.name, { type, lastModified: file.lastModified });
+}
+
 const fileProblem = (file, allowed, beforeShrinking = false) => {
-  if (!allowed.includes(file.type)) {
+  const type = resolvedType(file);
+  if (!allowed.includes(type)) {
     return allowed === IMAGE_TYPES ? 'must be a JPG or PNG' : 'must be a PDF, JPG or PNG';
   }
   // While the file is still the one that was picked, an image that is over the limit
   // is left alone: it is scaled down on submission and only then has to fit.
-  const exempt = beforeShrinking && IMAGE_TYPES.includes(file.type);
+  const exempt = beforeShrinking && IMAGE_TYPES.includes(type);
   if (!exempt && file.size > MAX_FILE_MB * 1024 * 1024) return `is larger than ${MAX_FILE_MB} MB`;
   return '';
 };
@@ -429,7 +461,8 @@ async function shrinkImage(file, attachmentType) {
 async function prepareAttachments() {
   const zones = attachmentZones();
   const perZone = await Promise.all(zones.map((zone) => {
-    const files = [...(zone.querySelector('input[type="file"]').files || [])];
+    const files = [...(zone.querySelector('input[type="file"]').files || [])]
+      .map(retypedFile);
     return Promise.all(files.map((file) => shrinkImage(file, zone.dataset.attachmentType)));
   }));
   return zones.map((zone, i) => ({ zone, files: perZone[i] }));

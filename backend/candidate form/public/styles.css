@@ -139,7 +139,7 @@ svg { width: 18px; height: 18px; flex: none; stroke-linecap: round; stroke-linej
 label, legend {
   font-size: 12.5px; color: var(--label); padding: 0;
 }
-label em, legend em { color: var(--err); font-style: normal; }
+label em, legend em, .photo-drop p em { color: var(--err); font-style: normal; }
 label .optional, legend .optional { color: var(--muted); font-weight: 400; }
 .hint { font-size: 11px; color: var(--muted); }
 
@@ -170,6 +170,10 @@ fieldset.invalid legend, .table-wrap.invalid + .btn-add { color: var(--err); }
 .dropzone.invalid, .table-wrap.invalid { border: 1px solid var(--err); background: #fef4f4; }
 /* The candidate photo is a dropzone too, but carries its own class. */
 .photo-drop.invalid { border: 1px solid var(--err); background: #fef4f4; border-radius: 12px; }
+/* Spelled-out message for the two fields whose red highlight is easy to miss: the
+   photo sits in the sidebar, and the title shares its label with the name inputs. */
+.field-error { margin: 5px 0 0; font-size: 12px; font-weight: 600; color: var(--err); }
+.photo-drop .field-error { margin-top: 8px; }
 
 .radios { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 4px; }
 .radios-wrap { max-width: 320px; }

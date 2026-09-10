@@ -218,6 +218,33 @@ function setErrors(list) {
   });
 }
 
+// The name a missing field goes by in the summary under the button. A label that
+// covers several inputs (Full Name sits over the title and the three name parts) or a
+// section with no label of its own carries a data-label instead.
+function fieldLabel(el) {
+  const own = el.dataset.label
+    || (el.id && document.querySelector(`label[for="${el.id}"]`)?.textContent)
+    || el.closest('.field, fieldset')?.querySelector('label, legend')?.textContent
+    || el.placeholder
+    || '';
+  const name = own.replace('*', '').trim() || 'This field';
+  // City, State and Pin Code each appear twice, so they are told apart by the heading
+  // of the address column they sit in.
+  const column = el.closest('.address-col')?.querySelector('.card-title')?.textContent.trim();
+  return column ? `${column}: ${name}` : name;
+}
+
+// Two of the mandatory fields say so in words as well. The photo is highlighted in the
+// sidebar, out of sight of the button that was just pressed, and the title shares its
+// label - and so its asterisk - with the three name inputs beside it, so a red border
+// on its own reads as though one of those were the field at fault.
+function syncFieldMessages() {
+  document.querySelectorAll('[data-error-for]').forEach((message) => {
+    const field = document.getElementById(message.dataset.errorFor);
+    message.hidden = !field?.classList.contains('invalid');
+  });
+}
+
 // Mandatory means four different things here: a plain [required] input, a radio
 // group with nothing chosen, an attachment section with no file, and a table with
 // no row filled in. The server checks all four again on submission.
@@ -245,6 +272,7 @@ function markInvalid() {
 
   missing.forEach((el) => el.classList.add('invalid'));
   mirrorInvalidToPermanent();
+  syncFieldMessages();
   return missing;
 }
 
@@ -260,6 +288,7 @@ function clearInvalid(event) {
   const zone = el.closest('[data-dropzone]');
   if (zone && el.type === 'file' && el.files.length) zone.classList.remove('invalid');
   mirrorInvalidToPermanent();
+  syncFieldMessages();
 }
 
 /* ── wiring ─────────────────────────────────────────────────────── */
@@ -534,6 +563,7 @@ form.addEventListener('submit', async (event) => {
     const [first] = missing;
     if (first.matches('input, select, textarea')) first.focus();
     else first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setErrors([...new Set(missing.map(fieldLabel))].map((name) => `${name} is required`));
     setStatus('Please complete the required fields marked with *.', 'err');
     return;
   }

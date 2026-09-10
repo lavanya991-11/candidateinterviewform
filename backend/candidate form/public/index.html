@@ -12,7 +12,7 @@
   <!-- ───────────────────────── sidebar ───────────────────────── -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="photo-drop" data-dropzone data-required data-attachment-type="Photo">
+      <div class="photo-drop" id="photo-drop" data-dropzone data-required data-label="Candidate photo" data-attachment-type="Photo">
         <div class="photo-frame" aria-hidden="true">
           <img class="photo-preview" hidden alt="" />
           <svg class="photo-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -25,6 +25,7 @@
         <small>JPG or PNG &mdash; large photos are resized automatically</small>
         <input type="file" accept=".jpg,.jpeg,.png" hidden />
         <ul class="file-list"></ul>
+        <p class="field-error" data-error-for="photo-drop" hidden>Please add a candidate photo.</p>
       </div>
     </div>
 
@@ -69,10 +70,11 @@
           <div class="field">
             <label for="title">Full Name <em>*</em></label>
             <!-- These match the Candidate Salutation enum in Business Central. -->
-            <select id="title" name="title" required>
+            <select id="title" name="title" data-label="Title" required>
               <option value="">Title</option>
               <option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Miss</option><option>Dr.</option>
             </select>
+            <p class="field-error" data-error-for="title" hidden>Please select a title.</p>
           </div>
           <div class="field">
             <label for="firstName" class="sr-only">First Name</label>

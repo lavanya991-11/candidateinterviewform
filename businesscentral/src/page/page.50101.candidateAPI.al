@@ -102,6 +102,19 @@ page 70142 "Candidate API"
         PictureDataUriTxt: Label 'data:%1;base64,%2', Locked = true;
 
     /// <summary>
+    /// Refuses an application that arrives without a title, so the row never enters the
+    /// table without one. The photo cannot be checked here: it is a Media field, which
+    /// OData publishes as a separate resource, so it can only be written to a row that
+    /// already exists - setPictureBase64 does that, and the submit refuses a row that
+    /// still has no photo by then.
+    /// </summary>
+    trigger OnInsertRecord(BelowxRec: Boolean): Boolean
+    begin
+        Rec.CheckSalutation();
+        exit(true);
+    end;
+
+    /// <summary>
     /// Submits the application. An API page exposes a bound action through a
     /// ServiceEnabled procedure - an action in the actions area is a UI construct that
     /// never reaches the OData metadata - so this is callable as

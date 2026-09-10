@@ -363,6 +363,7 @@ table 70120 "Candidate"
         PermanentAddressLockedErr: Label 'The permanent address is copied from the current address. Clear Same as Current Address to enter a different address.';
         SubmitConfirmQst: Label 'Do you want to submit this application? A submitted application can no longer be changed.';
         MissingFieldErr: Label '%1 must be filled in before the application can be submitted.', Comment = '%1 = Field caption';
+        MissingSalutationErr: Label 'A title must be selected before the application can be submitted. Choose Mr., Mrs., Ms., Miss or Dr.';
         MissingPictureErr: Label 'A candidate photo must be attached before the application can be submitted.';
         AlreadySubmittedErr: Label 'This application was already submitted on %1.', Comment = '%1 = Submission date and time';
         PictureDescriptionTxt: Label 'Photo of %1', Comment = '%1 = Candidate name';
@@ -723,12 +724,32 @@ table 70120 "Candidate"
     end;
 
     /// <summary>
+    /// Refuses a record that carries no title. Called from the insert as well as from
+    /// the submit, so an application cannot enter the table without one.
+    /// </summary>
+    procedure CheckSalutation()
+    begin
+        // Named in its own words rather than through MissingFieldErr: the field is a
+        // choice, not something to fill in, so the message says what to choose.
+        if "Salutation" = "Salutation"::" " then
+            Error(MissingSalutationErr);
+    end;
+
+    /// <summary>
+    /// Refuses a record that carries no photo.
+    /// </summary>
+    procedure CheckPicture()
+    begin
+        if not "Picture Blob".HasValue() then
+            Error(MissingPictureErr);
+    end;
+
+    /// <summary>
     /// Checks the fields that the application form marks as required.
     /// </summary>
     procedure CheckMandatoryFields()
     begin
-        if "Salutation" = "Salutation"::" " then
-            Error(MissingFieldErr, FieldCaption("Salutation"));
+        CheckSalutation();
         if "First Name" = '' then
             Error(MissingFieldErr, FieldCaption("First Name"));
         if "Date of Birth" = 0D then
@@ -747,8 +768,7 @@ table 70120 "Candidate"
             Error(MissingFieldErr, FieldCaption("Qualification"));
         // The photo is written to the Candidate Picture before the application is
         // submitted, so by this point it is either stored or it was never supplied.
-        if not "Picture Blob".HasValue() then
-            Error(MissingPictureErr);
+        CheckPicture();
     end;
 
     local procedure CopyCurrentAddressToPermanent()

@@ -7,6 +7,10 @@ page 70141 "Candidate Card"
     PageType = Card;
     ApplicationArea = All;
     SourceTable = "Candidate";
+    // The title of the card carries the candidate name rather than the primary key, so
+    // the application is identified by who it is from. The entry number stays on the
+    // list, where it is the reference number an applicant is asked to quote.
+    DataCaptionFields = "Candidate Name";
 
     layout
     {
@@ -19,6 +23,8 @@ page 70141 "Candidate Card"
                 field("Entry No."; Rec."Entry No.")
                 {
                     ApplicationArea = All;
+                    // Shown in the caption of the card instead, next to the name.
+                    Visible = false;
                     ToolTip = 'Specifies the unique number assigned to the candidate.';
                 }
                 field("Salutation"; Rec."Salutation")
@@ -384,6 +390,17 @@ page 70141 "Candidate Card"
         PermanentAddressEditable: Boolean;
         OtherQualificationEnabled: Boolean;
         TestDateEnabled: Boolean;
+
+    /// <summary>
+    /// Refuses to create the application until a title is chosen. Salutation is the first
+    /// control on the card, so the choice is made before anything else is typed, and no
+    /// record reaches the table without one.
+    /// </summary>
+    trigger OnInsertRecord(BelowxRec: Boolean): Boolean
+    begin
+        Rec.CheckSalutation();
+        exit(true);
+    end;
 
     trigger OnOpenPage()
     begin

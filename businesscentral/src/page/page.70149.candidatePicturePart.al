@@ -5,7 +5,9 @@
 /// </summary>
 page 70149 "Candidate Picture Part"
 {
-    Caption = 'Candidate Picture';
+    // The photo is mandatory, and the FactBox is the only place it can be added, so
+    // the caption says so where the Import action is.
+    Caption = 'Candidate Photo (Required)';
     PageType = CardPart;
     ApplicationArea = All;
     SourceTable = "Candidate";

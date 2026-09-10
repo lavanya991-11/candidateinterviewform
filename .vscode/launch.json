@@ -14,8 +14,8 @@
             "launchBrowser": true,
             "enableLongRunningSqlStatements": true,
             "tenant": "c4fcf5c8-ba04-4cc4-b972-091c2e3d6239",
-            "enableSqlInformationDebugger": true,
-            "schemaUpdateMode": "Recreate"
+            "enableSqlInformationDebugger": true
+            // "schemaUpdateMode": "Recreate"
             
         }
     ]

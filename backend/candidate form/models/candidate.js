@@ -154,8 +154,13 @@ const ATTACHMENT_TYPE_TO_BC = { Photo: 'Other' };
 async function postPicture(candidateId, photo) {
   if (!photo) return false;
   try {
+    // Sent as a data URI rather than bare Base64 so that the real content type
+    // travels with it: SetPictureFromBase64 reads the type off the prefix and
+    // otherwise falls back to image/jpeg, which would file a PNG as a JPEG.
     await bcClient.request('post', `candidates(${candidateId})/Microsoft.NAV.setPictureBase64`, {
-      data: { pictureBase64: photo.buffer.toString('base64') },
+      data: {
+        pictureBase64: `data:${photo.mimetype};base64,${photo.buffer.toString('base64')}`,
+      },
     });
     return true;
   } catch (err) {

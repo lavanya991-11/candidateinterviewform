@@ -24,6 +24,7 @@ page 70141 "Candidate Card"
                 field("Salutation"; Rec."Salutation")
                 {
                     ApplicationArea = All;
+                    ShowMandatory = true;
                     ToolTip = 'Specifies the salutation of the candidate, such as Mr. or Ms.';
                 }
                 field("First Name"; Rec."First Name")

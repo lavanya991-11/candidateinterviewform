@@ -115,10 +115,12 @@ page 70142 "Candidate API"
         if not Candidate.GetBySystemId(Rec.SystemId) then
             Error(CandidateNotFoundErr);
 
-        // Submit() rather than SubmitApplication(): the table owns the already-submitted
-        // guard, the mandatory field check and the status update, but the confirmation
-        // dialog belongs to the UI path only - a client callback fails outright here.
-        Candidate.Submit();
+        // SubmitFromApplicationForm() rather than SubmitApplication(): the table owns the
+        // already-submitted guard, the mandatory field check and the status update, but
+        // the confirmation dialog belongs to the UI path only - a client callback fails
+        // outright here. This is also the one path that acknowledges the candidate by
+        // email, because it is the only one the candidate themselves can reach.
+        Candidate.SubmitFromApplicationForm();
 
         ActionContext.SetObjectType(ObjectType::Page);
         ActionContext.SetObjectId(Page::"Candidate API");

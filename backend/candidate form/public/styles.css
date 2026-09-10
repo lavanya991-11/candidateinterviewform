@@ -168,6 +168,8 @@ input.invalid, select.invalid { border-color: var(--err); background: #fef4f4; }
    input of their own, so the whole block is flagged instead. */
 fieldset.invalid legend, .table-wrap.invalid + .btn-add { color: var(--err); }
 .dropzone.invalid, .table-wrap.invalid { border: 1px solid var(--err); background: #fef4f4; }
+/* The candidate photo is a dropzone too, but carries its own class. */
+.photo-drop.invalid { border: 1px solid var(--err); background: #fef4f4; border-radius: 12px; }
 
 .radios { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 4px; }
 .radios-wrap { max-width: 320px; }

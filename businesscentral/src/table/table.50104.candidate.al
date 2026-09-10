@@ -363,6 +363,7 @@ table 70120 "Candidate"
         PermanentAddressLockedErr: Label 'The permanent address is copied from the current address. Clear Same as Current Address to enter a different address.';
         SubmitConfirmQst: Label 'Do you want to submit this application? A submitted application can no longer be changed.';
         MissingFieldErr: Label '%1 must be filled in before the application can be submitted.', Comment = '%1 = Field caption';
+        MissingPictureErr: Label 'A candidate photo must be attached before the application can be submitted.';
         AlreadySubmittedErr: Label 'This application was already submitted on %1.', Comment = '%1 = Submission date and time';
         PictureDescriptionTxt: Label 'Photo of %1', Comment = '%1 = Candidate name';
         DefaultPictureMimeTypeTok: Label 'image/jpeg', Locked = true;
@@ -661,8 +662,10 @@ table 70120 "Candidate"
     end;
 
     /// <summary>
-    /// Asks the user to confirm and then submits the application. Only for a session
-    /// that has a client to answer the question - the API calls Submit() instead.
+    /// Asks the user to confirm and then submits the application, from a session that
+    /// has a client to answer the question. This is recruitment submitting the record
+    /// inside Business Central, not the candidate, so no acknowledgement is sent - the
+    /// candidate is only written to when they themselves submit the application form.
     /// </summary>
     procedure SubmitApplication()
     begin
@@ -675,9 +678,22 @@ table 70120 "Candidate"
     end;
 
     /// <summary>
+    /// Submits the application on the candidate's own behalf and acknowledges it by
+    /// email. Only the application form reaches this, through the submit action on the
+    /// API page, so an acknowledgement means the candidate really did submit it.
+    /// </summary>
+    procedure SubmitFromApplicationForm()
+    begin
+        Submit();
+
+        SendApplicationConfirmationEmail();
+    end;
+
+    /// <summary>
     /// Validates the mandatory parts of the application form and marks the application
     /// as submitted, without asking anything. Business Central Data Services cannot
     /// issue a client callback, so no code an API request can reach may confirm.
+    /// Sends nothing: the acknowledgement belongs to the form path alone.
     /// </summary>
     procedure Submit()
     begin
@@ -686,8 +702,6 @@ table 70120 "Candidate"
         "Application Status" := "Application Status"::Submitted;
         "Submitted On" := CurrentDateTime();
         Modify(true);
-
-        SendApplicationConfirmationEmail();
     end;
 
     /// <summary>
@@ -713,6 +727,8 @@ table 70120 "Candidate"
     /// </summary>
     procedure CheckMandatoryFields()
     begin
+        if "Salutation" = "Salutation"::" " then
+            Error(MissingFieldErr, FieldCaption("Salutation"));
         if "First Name" = '' then
             Error(MissingFieldErr, FieldCaption("First Name"));
         if "Date of Birth" = 0D then
@@ -729,6 +745,10 @@ table 70120 "Candidate"
             Error(MissingFieldErr, FieldCaption("Post Code"));
         if "Qualification" = "Qualification"::" " then
             Error(MissingFieldErr, FieldCaption("Qualification"));
+        // The photo is written to the Candidate Picture before the application is
+        // submitted, so by this point it is either stored or it was never supplied.
+        if not "Picture Blob".HasValue() then
+            Error(MissingPictureErr);
     end;
 
     local procedure CopyCurrentAddressToPermanent()

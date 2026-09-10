@@ -122,6 +122,7 @@ function validateCandidate(req, res, next) {
     candidate[field] = value;
   }
 
+  if (!candidate.title) errors.push('Title is required');
   if (!candidate.firstName) errors.push('First name is required');
   if (!candidate.lastName) errors.push('Last name is required');
   if (!candidate.gender) errors.push('Gender is required');
@@ -171,11 +172,14 @@ function validateCandidate(req, res, next) {
   candidate.employment = cleanEmployment(body.employment, errors);
   candidate.references = cleanReferences(body.references, errors);
 
-  // Attached files were parsed out of the multipart body before validation. Only the
-  // graduation certificates are mandatory; the photo, the registration certificates
-  // and the experience certificates are all optional.
+  // Attached files were parsed out of the multipart body before validation. The photo
+  // and the graduation certificates are mandatory; the registration and experience
+  // certificates are both optional.
   candidate.attachments = req.attachments || [];
   const attached = (type) => candidate.attachments.some((f) => f.attachmentType === type);
+  if (!attached('Photo')) {
+    errors.push('A candidate photo is required');
+  }
   if (!attached('Education')) {
     errors.push('At least one graduation certificate or mark sheet is required');
   }

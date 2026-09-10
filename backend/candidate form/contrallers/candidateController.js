@@ -1,6 +1,5 @@
 const Candidate = require('../models/candidate');
 const config = require('../config');
-const mailer = require('../services/mailer');
 
 async function createCandidate(req, res, next) {
   try {
@@ -14,7 +13,9 @@ async function createCandidate(req, res, next) {
         + `Please quote reference number ${saved.entryNo} in any future correspondence.`
       : 'Application saved locally (Business Central is not configured).';
 
-    await mailer.sendApplicationConfirmation(req.candidate);
+    // No email is sent from here. Business Central owns the acknowledgement: the
+    // submit action fired by finishInBc() runs Candidate.Submit(), which sends it
+    // through the Default email scenario. Sending here as well would double it up.
 
     res.status(201).json({ message, candidate: saved });
   } catch (err) {

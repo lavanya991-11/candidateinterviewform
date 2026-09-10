@@ -53,5 +53,11 @@ app.listen(config.port, () => {
   if (!config.bc.enabled) {
     console.log('Submissions go to data/candidates.json until Business Central is configured.');
   }
+  // The acknowledgement is sent by Business Central, from the submit action, so
+  // without BC there is no sender at all - worth saying rather than leaving the
+  // absent email looking like a delivery failure.
+  console.log('Acknowledgement email:', config.bc.enabled
+    ? 'sent by Business Central on submit (needs an Email Account on the Default scenario)'
+    : 'not sent - Business Central is not configured');
   console.log('CORS origins:', config.allowedOrigins.join(', '));
 });

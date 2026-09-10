@@ -230,7 +230,10 @@ function markInvalid() {
     if (!value(group.dataset.requiredGroup)) missing.push(group);
   });
 
-  form.querySelectorAll('[data-dropzone][data-required]').forEach((zone) => {
+  // Scanned from the document rather than the form: the candidate photo dropzone
+  // lives in the sidebar, outside the form element, the same way attachmentZones()
+  // collects it for upload.
+  document.querySelectorAll('[data-dropzone][data-required]').forEach((zone) => {
     if (!zone.querySelector('input[type="file"]').files.length) missing.push(zone);
   });
 
@@ -260,8 +263,10 @@ function clearInvalid(event) {
 }
 
 /* ── wiring ─────────────────────────────────────────────────────── */
-form.addEventListener('input', clearInvalid);
-form.addEventListener('change', clearInvalid);
+// Bound to the document rather than the form so that the candidate photo, which sits
+// in the sidebar outside the form, clears its own highlight when a file is chosen.
+document.addEventListener('input', clearInvalid);
+document.addEventListener('change', clearInvalid);
 
 document.querySelectorAll('select[data-countries]').forEach((select) => {
   select.innerHTML = '<option value="">Please Select</option>' +

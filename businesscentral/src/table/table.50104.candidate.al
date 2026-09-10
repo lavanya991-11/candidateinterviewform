@@ -7,6 +7,9 @@ table 70120 "Candidate"
     DataClassification = CustomerContent;
     LookupPageId = "Candidate List";
     DrillDownPageId = "Candidate List";
+    // The record is identified by who the application is from, not by its number, so
+    // the name is what titles the card and what any lookup or error message repeats.
+    DataCaptionFields = "Candidate Name";
 
     fields
     {

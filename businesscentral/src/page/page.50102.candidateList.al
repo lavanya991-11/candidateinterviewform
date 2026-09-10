@@ -20,6 +20,9 @@ page 70136 "Candidate List"
                 field("Entry No."; Rec."Entry No.")
                 {
                     ApplicationArea = All;
+                    // Left on the page rather than removed, so it can be brought back
+                    // from Personalize without a code change.
+                    Visible = false;
                     ToolTip = 'Specifies the unique number assigned to the candidate.';
                 }
                 field("Candidate Name"; Rec."Candidate Name")

@@ -2,6 +2,7 @@ const form = document.getElementById('application-form');
 const statusEl = document.getElementById('status');
 const errorList = document.getElementById('error-list');
 const submitBtn = document.getElementById('submit-btn');
+const photoZone = document.getElementById('photo-drop');
 
 const DRAFT_KEY = 'candidate-form-draft';
 
@@ -611,7 +612,15 @@ form.addEventListener('submit', async (event) => {
     if (first.matches('input, select, textarea')) first.focus();
     else first.scrollIntoView({ block: 'center', behavior: 'smooth' });
     setErrors([...new Set(missing.map(fieldLabel))].map((name) => `${name} is required`));
-    setStatus('Please complete the required fields marked with *.', 'err');
+    // The photo is the one mandatory field that is nowhere near the button that was
+    // just pressed - it sits in the sidebar - so when it is what is missing the
+    // message says so instead of pointing at asterisks the applicant has to hunt for.
+    const needsPhoto = missing.includes(photoZone);
+    setStatus(needsPhoto
+      ? (missing.length === 1
+        ? 'Please add the candidate photo. A photo is required.'
+        : 'Please add the candidate photo and complete the other fields marked with *.')
+      : 'Please complete the required fields marked with *.', 'err');
     return;
   }
 

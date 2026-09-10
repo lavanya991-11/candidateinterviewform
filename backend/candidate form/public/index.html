@@ -23,7 +23,7 @@
         <p>Add Candidate Photo <em>*</em></p>
         <button type="button" class="btn btn-browse">Browse</button>
         <small><b>Required</b> &mdash; JPG or PNG, large photos are resized automatically</small>
-        <input type="file" accept=".jpg,.jpeg,.png" hidden />
+        <input type="file" accept=".jpg,.jpeg,.png" required aria-required="true" hidden />
         <ul class="file-list"></ul>
         <p class="field-error" data-error-for="photo-drop" hidden>Please add a candidate photo.</p>
       </div>

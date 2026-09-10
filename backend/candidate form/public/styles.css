@@ -63,6 +63,10 @@ svg { width: 18px; height: 18px; flex: none; stroke-linecap: round; stroke-linej
 .photo-drop p { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
 .photo-drop.is-over .photo-frame { background: var(--blue); color: #fff; }
 .photo-drop small { display: block; margin-top: 6px; font-size: 11px; color: var(--muted); }
+/* The photo carries an asterisk like every other mandatory field, but it sits alone in
+   the sidebar with no row of starred labels beside it to read it against, so it says so
+   in words as well. Weight rather than red: nothing is wrong until a submission says so. */
+.photo-drop small b { color: var(--label); font-weight: 600; }
 .photo-drop .file-list { text-align: left; }
 
 .steps {

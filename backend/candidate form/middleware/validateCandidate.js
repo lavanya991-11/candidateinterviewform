@@ -176,6 +176,18 @@ function validateCandidate(req, res, next) {
   // and the graduation certificates are mandatory; the registration and experience
   // certificates are both optional.
   candidate.attachments = req.attachments || [];
+
+  // A file with no content passes every check a name and a type can answer, and is
+  // only refused at the very end by Business Central, which will not submit an
+  // application whose photo turned out to be empty - by which point the applicant has
+  // been thanked and the record is a draft nobody is watching. It is refused here
+  // instead, while there is still a request to answer.
+  for (const file of candidate.attachments) {
+    if (!file.size || !file.buffer?.length) {
+      errors.push(`${file.originalname} is empty - please attach the file again`);
+    }
+  }
+
   const attached = (type) => candidate.attachments.some((f) => f.attachmentType === type);
   if (!attached('Photo')) {
     errors.push('A candidate photo is required');

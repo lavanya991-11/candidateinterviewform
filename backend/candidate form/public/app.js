@@ -387,6 +387,12 @@ function retypedFile(file) {
 }
 
 const fileProblem = (file, allowed, beforeShrinking = false) => {
+  // A file with no content at all reads as a perfectly good attachment everywhere
+  // else - it has a name, a type and a place in the list - and only stops being one
+  // in Business Central, which refuses to submit an application whose photo turned
+  // out to be empty. The usual source is a cloud-only file that the sync client has
+  // not fetched yet, so the advice is to open it once before attaching it.
+  if (file.size === 0) return 'is empty - open it once so it downloads, then attach it again';
   const type = resolvedType(file);
   if (!allowed.includes(type)) {
     return allowed === IMAGE_TYPES ? 'must be a JPG or PNG' : 'must be a PDF, JPG or PNG';
@@ -445,8 +451,10 @@ async function shrinkImage(file, attachmentType) {
     bitmap.close();
 
     const blob = await canvasBlob(canvas, outType, budget.quality);
-    // Re-encoding is not always a saving: a small PNG can come back larger.
-    if (!blob || blob.size >= file.size) return file;
+    // Re-encoding is not always a saving: a small PNG can come back larger. An empty
+    // blob is not a saving either - toBlob() answers with one where the encode failed,
+    // and it is smaller than the original by every measure except the one that counts.
+    if (!blob || blob.size === 0 || blob.size >= file.size) return file;
 
     const dot = file.name.lastIndexOf('.');
     const stem = dot > 0 ? file.name.slice(0, dot) : file.name;

@@ -152,7 +152,10 @@ const ATTACHMENT_TYPE_TO_BC = { Photo: 'Other' };
 // way in. BC re-encodes the image on import, and rejects anything that is not valid
 // Base64 with its own error.
 async function postPicture(candidateId, photo) {
-  if (!photo) return false;
+  // Nothing to store, and saying otherwise is worse than saying nothing: an empty
+  // Base64 string is a valid request that clears the picture and answers 200, so the
+  // photo would be dropped from the attachment list as though it had been filed.
+  if (!photo || !photo.buffer?.length) return false;
   try {
     // Sent as a data URI rather than bare Base64 so that the real content type
     // travels with it: SetPictureFromBase64 reads the type off the prefix and

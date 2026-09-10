@@ -249,7 +249,10 @@ function syncFieldMessages() {
 // group with nothing chosen, an attachment section with no file, and a table with
 // no row filled in. The server checks all four again on submission.
 function markInvalid() {
-  form.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
+  // Scanned from the document, not the form: the candidate photo dropzone sits in the
+  // sidebar, outside the form, and would otherwise keep the highlight it was given on
+  // an earlier attempt even once a photo has been added.
+  document.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
 
   const missing = [...form.querySelectorAll('[required]')].filter((el) => !el.value.trim());
 
@@ -539,7 +542,10 @@ document.querySelectorAll('[data-dropzone]').forEach((zone) => {
     e.preventDefault();
     zone.classList.remove('is-over');
     input.files = e.dataTransfer.files;
-    show(input.files);
+    // Setting .files fires no change event of its own, so the dropzone is told about
+    // the drop the same way it is told about a Browse - otherwise a photo added by
+    // dragging it in leaves the red highlight and its message in place.
+    input.dispatchEvent(new Event('change', { bubbles: true }));
   });
 });
 

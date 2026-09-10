@@ -7,6 +7,12 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const str = (v) => (typeof v === 'string' ? v.trim() : '');
 
+// The photo is the one attachment that has to be an image. It is not filed as a
+// document in Business Central but imported onto the candidate record as a picture,
+// under the type it arrives with, so a PDF that got this far would be stored as the
+// candidate photo. The certificate sections still take PDFs as well as images.
+const PHOTO_TYPES = ['image/jpeg', 'image/png'];
+
 const MAX = {
   title: 10, firstName: 50, middleName: 50, lastName: 50,
   gender: 20, maritalStatus: 20, positionAppliedFor: 100,
@@ -189,8 +195,11 @@ function validateCandidate(req, res, next) {
   }
 
   const attached = (type) => candidate.attachments.some((f) => f.attachmentType === type);
-  if (!attached('Photo')) {
+  const photo = candidate.attachments.find((f) => f.attachmentType === 'Photo');
+  if (!photo) {
     errors.push('A candidate photo is required');
+  } else if (!PHOTO_TYPES.includes(photo.mimetype)) {
+    errors.push('The candidate photo must be a JPG or PNG file');
   }
   if (!attached('Education')) {
     errors.push('At least one graduation certificate or mark sheet is required');

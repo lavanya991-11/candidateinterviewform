@@ -19,6 +19,11 @@ table 70131 "Candidate Cue"
             Caption = 'Application Date Filter';
             FieldClass = FlowFilter;
         }
+        field(4; "Submitted On Filter"; DateTime)
+        {
+            Caption = 'Submitted On Filter';
+            FieldClass = FlowFilter;
+        }
         field(10; "Total Candidates"; Integer)
         {
             Caption = 'Total Candidates';
@@ -53,6 +58,27 @@ table 70131 "Candidate Cue"
             FieldClass = FlowField;
             Editable = false;
             CalcFormula = count("Candidate" where("Application Date" = field("Application Date Filter")));
+        }
+        field(15; "Links Not Sent"; Integer)
+        {
+            Caption = 'Links Not Sent';
+            FieldClass = FlowField;
+            Editable = false;
+            CalcFormula = count("Candidate" where("Application Status" = const(Draft), "Registration Sent On" = const(0DT)));
+        }
+        field(16; "Waiting for Candidate"; Integer)
+        {
+            Caption = 'Waiting for Candidate';
+            FieldClass = FlowField;
+            Editable = false;
+            CalcFormula = count("Candidate" where("Application Status" = const(Invited)));
+        }
+        field(17; "Submitted Today"; Integer)
+        {
+            Caption = 'Submitted Today';
+            FieldClass = FlowField;
+            Editable = false;
+            CalcFormula = count("Candidate" where("Application Status" = const(Submitted), "Submitted On" = field("Submitted On Filter")));
         }
     }
 

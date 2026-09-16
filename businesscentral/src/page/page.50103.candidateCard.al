@@ -104,17 +104,7 @@ page 70141 "Candidate Card"
                 {
                     ApplicationArea = All;
                     ShowMandatory = true;
-                    ToolTip = 'Specifies the email address of the HR contact, who receives a copy of the registration email.';
-                }
-                field("Registration Sent On"; Rec."Registration Sent On")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies when the registration link was last sent to the candidate.';
-                }
-                field("Registration Sent By"; Rec."Registration Sent By")
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the user who last sent the registration link.';
+                    ToolTip = 'Specifies the email address of the HR contact, who receives a copy of the application confirmation email.';
                 }
             }
             group(CurrentAddress)
@@ -386,22 +376,10 @@ page 70141 "Candidate Card"
 
     actions
     {
+        // Registration links are sent from the Registration Invitation card, so this card
+        // only carries what is done with the application itself.
         area(Processing)
         {
-            action(SendForRegistration)
-            {
-                ApplicationArea = All;
-                Caption = 'Send for Registration';
-                Image = SendTo;
-                ToolTip = 'Email the candidate a link to the online application form, with a copy to the HR email address.';
-
-                trigger OnAction()
-                begin
-                    CurrPage.SaveRecord();
-                    Rec.SendForRegistration();
-                    CurrPage.Update(false);
-                end;
-            }
             action(SubmitApplication)
             {
                 ApplicationArea = All;
@@ -423,7 +401,6 @@ page 70141 "Candidate Card"
             {
                 Caption = 'Process';
 
-                actionref(SendForRegistration_Promoted; SendForRegistration) { }
                 actionref(SubmitApplication_Promoted; SubmitApplication) { }
             }
         }

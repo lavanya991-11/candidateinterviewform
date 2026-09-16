@@ -44,6 +44,56 @@ page 70144 "Candidate Activities"
                     end;
                 }
             }
+            cuegroup(Registrations)
+            {
+                Caption = 'Registrations';
+
+                field(LinksNotSent; LinksNotSentCount)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Links Not Sent';
+                    StyleExpr = LinksNotSentStyle;
+                    ToolTip = 'Specifies the number of invited candidates whose registration link has not been sent yet.';
+
+                    trigger OnDrillDown()
+                    var
+                        Candidate: Record "Candidate";
+                    begin
+                        SetLinksNotSentFilter(Candidate);
+                        ShowInvitations(Candidate);
+                    end;
+                }
+                field(WaitingForCandidate; WaitingForCandidateCount)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Waiting for Candidate';
+                    StyleExpr = WaitingForCandidateStyle;
+                    ToolTip = 'Specifies the number of candidates who were sent a registration link and have not submitted the form yet.';
+
+                    trigger OnDrillDown()
+                    var
+                        Candidate: Record "Candidate";
+                    begin
+                        Candidate.SetRange("Application Status", Candidate."Application Status"::Invited);
+                        ShowInvitations(Candidate);
+                    end;
+                }
+                field(SubmittedToday; SubmittedTodayCount)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Submitted Today';
+                    StyleExpr = SubmittedTodayStyle;
+                    ToolTip = 'Specifies the number of applications submitted today.';
+
+                    trigger OnDrillDown()
+                    var
+                        Candidate: Record "Candidate";
+                    begin
+                        SetSubmittedTodayFilter(Candidate);
+                        ShowApplications(Candidate);
+                    end;
+                }
+            }
             cuegroup(Interviews)
             {
                 Caption = 'Interviews';
@@ -100,13 +150,21 @@ page 70144 "Candidate Activities"
 
                 actions
                 {
+                    action(NewInvitation)
+                    {
+                        ApplicationArea = All;
+                        Caption = 'New Registration Invitation';
+                        RunObject = page "Candidate Invitation Card";
+                        RunPageMode = Create;
+                        ToolTip = 'Invite a new candidate to fill in the online application form.';
+                    }
                     action(NewCandidate)
                     {
                         ApplicationArea = All;
-                        Caption = 'New Candidate';
+                        Caption = 'New Job Application';
                         RunObject = page "Candidate Card";
                         RunPageMode = Create;
-                        ToolTip = 'Register a new candidate.';
+                        ToolTip = 'Enter a job application on behalf of a candidate, for example one handed in on paper.';
                     }
                 }
             }
@@ -140,11 +198,17 @@ page 70144 "Candidate Activities"
         InterviewsTodayCount: Integer;
         InterviewsScheduledCount: Integer;
         InterviewsNotScheduledCount: Integer;
+        LinksNotSentCount: Integer;
+        WaitingForCandidateCount: Integer;
+        SubmittedTodayCount: Integer;
         TotalCandidatesStyle: Text;
         NewApplicationsStyle: Text;
         InterviewsTodayStyle: Text;
         InterviewsScheduledStyle: Text;
         NotScheduledStyle: Text;
+        LinksNotSentStyle: Text;
+        WaitingForCandidateStyle: Text;
+        SubmittedTodayStyle: Text;
         // Blank dates are filtered as text so that no 0D value is ever sent to the client.
         BlankDateTok: Label '''''', Locked = true;
         NotBlankDateTok: Label '<>''''', Locked = true;
@@ -175,6 +239,34 @@ page 70144 "Candidate Activities"
         CandidateList.Run();
     end;
 
+    local procedure ShowInvitations(var Candidate: Record "Candidate")
+    var
+        InvitationList: Page "Candidate Invitation List";
+    begin
+        InvitationList.SetTableView(Candidate);
+        InvitationList.Run();
+    end;
+
+    local procedure ShowApplications(var Candidate: Record "Candidate")
+    var
+        ApplicationList: Page "Candidate Application List";
+    begin
+        ApplicationList.SetTableView(Candidate);
+        ApplicationList.Run();
+    end;
+
+    local procedure SetLinksNotSentFilter(var Candidate: Record "Candidate")
+    begin
+        Candidate.SetRange("Application Status", Candidate."Application Status"::Draft);
+        Candidate.SetFilter("Registration Sent On", BlankDateTok);
+    end;
+
+    local procedure SetSubmittedTodayFilter(var Candidate: Record "Candidate")
+    begin
+        Candidate.SetRange("Application Status", Candidate."Application Status"::Submitted);
+        Candidate.SetRange("Submitted On", CreateDateTime(ReferenceDate(), 0T), CreateDateTime(ReferenceDate(), 235959.999T));
+    end;
+
     local procedure UpdateCountsAndStyles()
     var
         Candidate: Record "Candidate";
@@ -196,6 +288,18 @@ page 70144 "Candidate Activities"
         Candidate.Reset();
         Candidate.SetFilter("Interview Date", BlankDateTok);
         InterviewsNotScheduledCount := Candidate.Count();
+
+        Candidate.Reset();
+        SetLinksNotSentFilter(Candidate);
+        LinksNotSentCount := Candidate.Count();
+
+        Candidate.Reset();
+        Candidate.SetRange("Application Status", Candidate."Application Status"::Invited);
+        WaitingForCandidateCount := Candidate.Count();
+
+        Candidate.Reset();
+        SetSubmittedTodayFilter(Candidate);
+        SubmittedTodayCount := Candidate.Count();
 
         UpdateStyles();
     end;
@@ -229,6 +333,20 @@ page 70144 "Candidate Activities"
         if not CuesAndKpis.PersonalizedCueSetupExistsForCurrentUser(Database::"Candidate Cue", TempCandidateCue.FieldNo("Interviews Not Scheduled")) then
             CuesAndKpis.InsertData(Database::"Candidate Cue", TempCandidateCue.FieldNo("Interviews Not Scheduled"),
                 Enum::"Cues And KPIs Style"::Favorable, 1, Enum::"Cues And KPIs Style"::Ambiguous, 5, Enum::"Cues And KPIs Style"::Unfavorable);
+
+        // A link that is not sent is work waiting on HR, so any count needs attention.
+        if not CuesAndKpis.PersonalizedCueSetupExistsForCurrentUser(Database::"Candidate Cue", TempCandidateCue.FieldNo("Links Not Sent")) then
+            CuesAndKpis.InsertData(Database::"Candidate Cue", TempCandidateCue.FieldNo("Links Not Sent"),
+                Enum::"Cues And KPIs Style"::Favorable, 1, Enum::"Cues And KPIs Style"::Ambiguous, 5, Enum::"Cues And KPIs Style"::Unfavorable);
+
+        // Candidates take a few days to reply, so only a long queue is a concern.
+        if not CuesAndKpis.PersonalizedCueSetupExistsForCurrentUser(Database::"Candidate Cue", TempCandidateCue.FieldNo("Waiting for Candidate")) then
+            CuesAndKpis.InsertData(Database::"Candidate Cue", TempCandidateCue.FieldNo("Waiting for Candidate"),
+                Enum::"Cues And KPIs Style"::Subordinate, 1, Enum::"Cues And KPIs Style"::Ambiguous, 10, Enum::"Cues And KPIs Style"::Unfavorable);
+
+        if not CuesAndKpis.PersonalizedCueSetupExistsForCurrentUser(Database::"Candidate Cue", TempCandidateCue.FieldNo("Submitted Today")) then
+            CuesAndKpis.InsertData(Database::"Candidate Cue", TempCandidateCue.FieldNo("Submitted Today"),
+                Enum::"Cues And KPIs Style"::Subordinate, 1, Enum::"Cues And KPIs Style"::Favorable, 10, Enum::"Cues And KPIs Style"::Favorable);
     end;
 
     local procedure UpdateStyles()
@@ -251,5 +369,14 @@ page 70144 "Candidate Activities"
 
         CuesAndKpis.SetCueStyle(Database::"Candidate Cue", TempCandidateCue.FieldNo("Interviews Not Scheduled"), InterviewsNotScheduledCount, StyleEnum);
         NotScheduledStyle := CuesAndKpis.ConvertStyleToStyleText(StyleEnum);
+
+        CuesAndKpis.SetCueStyle(Database::"Candidate Cue", TempCandidateCue.FieldNo("Links Not Sent"), LinksNotSentCount, StyleEnum);
+        LinksNotSentStyle := CuesAndKpis.ConvertStyleToStyleText(StyleEnum);
+
+        CuesAndKpis.SetCueStyle(Database::"Candidate Cue", TempCandidateCue.FieldNo("Waiting for Candidate"), WaitingForCandidateCount, StyleEnum);
+        WaitingForCandidateStyle := CuesAndKpis.ConvertStyleToStyleText(StyleEnum);
+
+        CuesAndKpis.SetCueStyle(Database::"Candidate Cue", TempCandidateCue.FieldNo("Submitted Today"), SubmittedTodayCount, StyleEnum);
+        SubmittedTodayStyle := CuesAndKpis.ConvertStyleToStyleText(StyleEnum);
     end;
 }

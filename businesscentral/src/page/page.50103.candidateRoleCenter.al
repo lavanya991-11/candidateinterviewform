@@ -22,12 +22,19 @@ page 70143 "Candidate Role Center"
     {
         area(Embedding)
         {
-            action(Candidates)
+            action(Invitations)
             {
                 ApplicationArea = All;
-                Caption = 'Candidates';
-                RunObject = page "Candidate List";
-                ToolTip = 'Open the list of registered candidates.';
+                Caption = 'Registration Invitations';
+                RunObject = page "Candidate Invitation List";
+                ToolTip = 'Open the candidates who are invited to the online application form and have not submitted it yet.';
+            }
+            action(Applications)
+            {
+                ApplicationArea = All;
+                Caption = 'Candidate Applications';
+                RunObject = page "Candidate Application List";
+                ToolTip = 'Open the submitted job applications.';
             }
         }
 
@@ -38,13 +45,29 @@ page 70143 "Candidate Role Center"
                 Caption = 'Recruitment';
                 Image = Job;
 
+                action(InvitationList)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Registration Invitations';
+                    Image = SendTo;
+                    RunObject = page "Candidate Invitation List";
+                    ToolTip = 'Open the candidates who are invited to the online application form and have not submitted it yet.';
+                }
+                action(ApplicationList)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Candidate Applications';
+                    Image = Approve;
+                    RunObject = page "Candidate Application List";
+                    ToolTip = 'Open the submitted job applications.';
+                }
                 action(CandidateList)
                 {
                     ApplicationArea = All;
-                    Caption = 'Candidates';
+                    Caption = 'All Candidates';
                     Image = User;
                     RunObject = page "Candidate List";
-                    ToolTip = 'Open the list of registered candidates.';
+                    ToolTip = 'Open every candidate, whatever the status of the application.';
                 }
                 action(ScheduledInterviews)
                 {
@@ -69,14 +92,23 @@ page 70143 "Candidate Role Center"
 
         area(Creation)
         {
+            action(NewInvitation)
+            {
+                ApplicationArea = All;
+                Caption = 'Registration Invitation';
+                Image = New;
+                RunObject = page "Candidate Invitation Card";
+                RunPageMode = Create;
+                ToolTip = 'Invite a new candidate to fill in the online application form.';
+            }
             action(NewCandidate)
             {
                 ApplicationArea = All;
-                Caption = 'Candidate';
+                Caption = 'Job Application';
                 Image = New;
                 RunObject = page "Candidate Card";
                 RunPageMode = Create;
-                ToolTip = 'Register a new candidate.';
+                ToolTip = 'Enter a job application on behalf of a candidate, for example one handed in on paper.';
             }
         }
 

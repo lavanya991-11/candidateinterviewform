@@ -20,13 +20,29 @@ pageextension 70150 "Candidate BM Role Center Ext" extends "Business Manager Rol
                 Caption = 'Recruitment';
                 Image = Job;
 
+                action(InvitationList)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Registration Invitations';
+                    Image = SendTo;
+                    RunObject = page "Candidate Invitation List";
+                    ToolTip = 'Open the candidates who are invited to the online application form and have not submitted it yet.';
+                }
+                action(ApplicationList)
+                {
+                    ApplicationArea = All;
+                    Caption = 'Candidate Applications';
+                    Image = Approve;
+                    RunObject = page "Candidate Application List";
+                    ToolTip = 'Open the submitted job applications.';
+                }
                 action(CandidateList)
                 {
                     ApplicationArea = All;
-                    Caption = 'Candidates';
+                    Caption = 'All Candidates';
                     Image = User;
                     RunObject = page "Candidate List";
-                    ToolTip = 'Open the list of registered candidates.';
+                    ToolTip = 'Open every candidate, whatever the status of the application.';
                 }
                 action(CandidatesWithoutInterview)
                 {

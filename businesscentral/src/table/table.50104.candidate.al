@@ -339,6 +339,37 @@ table 70120 "Candidate"
             CalcFormula = lookup("Candidate"."Picture Blob" where("Entry No." = field("Entry No.")));
             Editable = false;
         }
+
+        // Registration
+        field(90; "HR Email"; Text[80])
+        {
+            Caption = 'HR Email Address';
+            ExtendedDatatype = EMail;
+
+            trigger OnValidate()
+            var
+                MailMgt: Codeunit "Mail Management";
+            begin
+                if "HR Email" <> '' then
+                    MailMgt.CheckValidEmailAddress("HR Email");
+            end;
+        }
+        field(91; "Registration Token"; Guid)
+        {
+            Caption = 'Registration Token';
+            // The secret part of the registration link, so it is never shown or typed.
+            Editable = false;
+        }
+        field(92; "Registration Sent On"; DateTime)
+        {
+            Caption = 'Registration Sent On';
+            Editable = false;
+        }
+        field(93; "Registration Sent By"; Code[50])
+        {
+            Caption = 'Registration Sent By';
+            Editable = false;
+        }
     }
 
     keys
@@ -350,6 +381,7 @@ table 70120 "Candidate"
         key(Email; "Email") { }
         key(InterviewDate; "Interview Date") { }
         key(Name; "Last Name", "First Name") { }
+        key(RegistrationToken; "Registration Token") { }
     }
 
     fieldgroups
@@ -383,6 +415,8 @@ table 70120 "Candidate"
     begin
         if "Application Date" = 0D then
             "Application Date" := Today();
+        if "HR Email" = '' then
+            "HR Email" := GetCurrentUserEmail();
         UpdateCandidateName();
     end;
 
@@ -423,6 +457,33 @@ table 70120 "Candidate"
 
         if NewName <> '' then
             "Candidate Name" := CopyStr(NewName, 1, MaxStrLen("Candidate Name"));
+    end;
+
+    /// <summary>
+    /// Emails the candidate a personal link to the application form, with a copy to the
+    /// HR email address.
+    /// </summary>
+    procedure SendForRegistration()
+    var
+        CandidateRegistration: Codeunit "Candidate Registration";
+    begin
+        CandidateRegistration.SendInvitation(Rec);
+    end;
+
+    /// <summary>
+    /// Returns the email address of the signed-in user, so the person who enters the
+    /// candidate is the HR contact unless another address is typed in.
+    /// </summary>
+    local procedure GetCurrentUserEmail(): Text[80]
+    var
+        User: Record User;
+    begin
+        // An API session runs as the application user, which has no email address.
+        if not User.Get(UserSecurityId()) then
+            exit('');
+        if User."Contact Email" <> '' then
+            exit(CopyStr(User."Contact Email", 1, 80));
+        exit(CopyStr(User."Authentication Email", 1, 80));
     end;
 
     /// <summary>

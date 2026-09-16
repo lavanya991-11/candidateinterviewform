@@ -245,8 +245,81 @@ async function finishInBc(created, candidate, photo) {
   }
 }
 
+// A registration link carries the Registration Token of a record HR created in Business
+// Central. It is checked against this shape before it goes anywhere near an OData
+// filter, where it is written unquoted as an Edm.Guid literal.
+const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Errors the applicant can act on, carried to the error handler with their own status.
+function registrationError(status, code, message) {
+  const err = new Error(message);
+  err.registration = { status, code };
+  return err;
+}
+
+const invert = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
+const FORM_SALUTATION = invert(ENUMS.salutation);
+
+// Finds the record a registration link belongs to. Only a record that is still waiting
+// for its form is returned: the API page moves it to Draft on the first write from the
+// form, so a link cannot fill the same record in twice.
+async function findInvitation(token) {
+  if (!TOKEN_RE.test(token || '')) {
+    throw registrationError(404, 'REGISTRATION_NOT_FOUND', 'This registration link is not valid.');
+  }
+  if (!config.bc.enabled) {
+    throw registrationError(503, 'REGISTRATION_UNAVAILABLE',
+      'Registration links need Business Central, which is not configured.');
+  }
+
+  const data = await bcClient.request('get', 'candidates', {
+    params: { $filter: `registrationToken eq ${token.toLowerCase()}`, $top: 1 },
+  });
+  const record = (data.value || [])[0];
+
+  if (!record) {
+    throw registrationError(404, 'REGISTRATION_NOT_FOUND',
+      'This registration link is not valid. It may have been replaced by a newer link - '
+      + 'please use the most recent email you received.');
+  }
+  if (record.applicationStatus !== 'Invited') {
+    throw registrationError(409, 'REGISTRATION_USED',
+      `This registration link has already been used. Please quote reference number ${record.entryNo} `
+      + 'if you need to contact us.');
+  }
+  return record;
+}
+
+// What the form is prefilled with. The record carries the rest of the application
+// too, but nothing beyond what HR entered is handed to whoever holds the link.
+async function getInvitation(token) {
+  const record = await findInvitation(token);
+  return {
+    entryNo: record.entryNo,
+    title: FORM_SALUTATION[record.salutation] || '',
+    firstName: record.firstName || '',
+    middleName: record.middleName || '',
+    lastName: record.lastName || '',
+    email: record.email || '',
+    positionAppliedFor: record.positionAppliedFor || '',
+  };
+}
+
+// An invited record already exists, so the form writes onto it instead of inserting a
+// new one. The email address stays the one HR sent the link to.
+async function updateInvitation(candidate) {
+  const record = await findInvitation(candidate.registrationToken);
+  const payload = candidatePayload({ ...candidate, email: record.email });
+  return bcClient.request('patch', `candidates(${record.id})`, {
+    data: payload,
+    headers: { 'If-Match': '*' },
+  });
+}
+
 async function createInBc(candidate) {
-  const created = await bcClient.request('post', 'candidates', { data: candidatePayload(candidate) });
+  const created = candidate.registrationToken
+    ? await updateInvitation(candidate)
+    : await bcClient.request('post', 'candidates', { data: candidatePayload(candidate) });
 
   // The photo cannot travel in the insert - it is a Media field, which OData publishes
   // as a resource of its own - so it goes up the moment the row exists, and before the
@@ -287,6 +360,10 @@ async function writeLocal(rows) {
 }
 
 async function create(candidate) {
+  // Checked before the local fallback, so a link does not quietly create a new record.
+  if (candidate.registrationToken && !config.bc.enabled) {
+    await findInvitation(candidate.registrationToken);
+  }
   if (config.bc.enabled) return createInBc(candidate);
 
   // Local mode keeps the full structure - it is not limited by the BC table. Files are
@@ -318,5 +395,5 @@ async function list() {
 }
 
 module.exports = {
-  create, list, candidatePayload, employmentPayload, referencePayload, ENUMS,
+  create, list, getInvitation, candidatePayload, employmentPayload, referencePayload, ENUMS,
 };

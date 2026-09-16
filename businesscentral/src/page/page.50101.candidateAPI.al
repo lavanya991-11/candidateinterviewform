@@ -77,6 +77,10 @@ page 70142 "Candidate API"
                 field(applicationDate; Rec."Application Date") { Editable = false; }
                 field(applicationStatus; Rec."Application Status") { Editable = false; }
                 field(submittedOn; Rec."Submitted On") { Editable = false; }
+
+                // Registration - the form looks the invited record up by its token.
+                field(registrationToken; Rec."Registration Token") { Editable = false; }
+                field(hrEmail; Rec."HR Email") { Editable = false; }
                 field(lastModifiedDateTime; Rec.SystemModifiedAt) { Editable = false; }
 
                 part(employmentHistory; "Candidate Empl. Hist. API")
@@ -111,6 +115,18 @@ page 70142 "Candidate API"
     trigger OnInsertRecord(BelowxRec: Boolean): Boolean
     begin
         Rec.CheckSalutation();
+        exit(true);
+    end;
+
+    /// <summary>
+    /// A write from the application form to a record that HR sent a registration link for
+    /// means the link has been used. The record moves back to Draft, which the form refuses
+    /// to open again, so a registration link cannot fill the same record in twice.
+    /// </summary>
+    trigger OnModifyRecord(): Boolean
+    begin
+        if Rec."Application Status" = Rec."Application Status"::Invited then
+            Rec."Application Status" := Rec."Application Status"::Draft;
         exit(true);
     end;
 

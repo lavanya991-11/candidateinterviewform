@@ -14,5 +14,6 @@ router.post(
   controller.createCandidate,
 );
 router.get('/candidates', controller.listCandidates);
+router.get('/registrations/:token', controller.getRegistration);
 
 module.exports = router;

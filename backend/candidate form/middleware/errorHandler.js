@@ -20,6 +20,16 @@ function describe(err) {
     };
   }
 
+  // A registration link that is unknown, replaced or already used.
+  if (err.registration) {
+    return {
+      status: err.registration.status,
+      code: err.registration.code,
+      message: err.message,
+      log: err.message,
+    };
+  }
+
   // Rejected by the CORS origin check in server.js.
   if (/^Origin .* is not allowed$/.test(err.message || '')) {
     return { status: 403, code: 'ORIGIN_NOT_ALLOWED', message: err.message, log: err.message };

@@ -100,17 +100,59 @@ codeunit 70154 "Candidate Ack. Email"
     /// <returns>The complete HTML document.</returns>
     procedure BuildBody(var Candidate: Record "Candidate"; CompanyInformation: Record "Company Information"): Text
     var
-        Html: TextBuilder;
-        CompanyName: Text;
+        Paragraphs: List of [Text];
+        Summary: TextBuilder;
+        CompanyHighlight: Text;
+        PositionHighlight: Text;
     begin
         Candidate.CalcFields("No. of Attachments");
+        CompanyHighlight := Highlight(CompanyInformation.Name);
+        PositionHighlight := Highlight(Candidate."Position Applied For");
+
+        Paragraphs.Add(StrSubstNo(InterestParaTxt, CompanyHighlight));
+        Paragraphs.Add(StrSubstNo(ReceivedParaTxt, PositionHighlight));
+        Paragraphs.Add(ReviewParaTxt);
+        Paragraphs.Add(PatienceParaTxt);
+        Paragraphs.Add(StrSubstNo(ClosingParaTxt, CompanyHighlight));
+
+        AppendSummary(Summary, Candidate);
+
+        exit(BuildLayout(
+            CompanyInformation, HeroTitleTxt, HeroSubtitleTxt,
+            StrSubstNo(GreetingTxt, EncodeHtml(Candidate.GetFullName())), Paragraphs, Summary.ToText()));
+    end;
+
+    /// <summary>
+    /// Wraps a message in the branded layout shared by every email sent to a candidate:
+    /// the header, the hero banner, the greeting and paragraphs, an optional block after
+    /// them, the signature, the contact bar and the footer.
+    /// </summary>
+    /// <param name="CompanyInformation">The company details shown in the header and footer.</param>
+    /// <param name="HeroTitle">The banner title, as plain text.</param>
+    /// <param name="HeroSubtitle">The banner subtitle, as plain text.</param>
+    /// <param name="Greeting">The greeting line, as HTML that is already encoded.</param>
+    /// <param name="Paragraphs">The body paragraphs, as HTML that is already encoded.</param>
+    /// <param name="AfterBody">HTML table rows placed after the paragraphs, or an empty text.</param>
+    /// <returns>The complete HTML document.</returns>
+    internal procedure BuildLayout(CompanyInformation: Record "Company Information"; HeroTitle: Text; HeroSubtitle: Text; Greeting: Text; Paragraphs: List of [Text]; AfterBody: Text): Text
+    var
+        Html: TextBuilder;
+        CompanyName: Text;
+        Paragraph: Text;
+    begin
         CompanyName := EncodeHtml(CompanyInformation.Name);
 
         Html.Append(DocOpenTok);
         Html.Append(StrSubstNo(HeaderTok, GetLogoInitial(CompanyInformation.Name), CompanyName, CompanyTaglineTxt, CareersLinkTxt));
-        AppendHero(Html);
-        AppendIntro(Html, Candidate, CompanyName);
-        AppendSummary(Html, Candidate);
+        AppendHero(Html, EncodeHtml(HeroTitle), EncodeHtml(HeroSubtitle));
+
+        Html.Append(BodyOpenTok);
+        Html.Append(StrSubstNo(GreetingLineTok, Greeting));
+        foreach Paragraph in Paragraphs do
+            Html.Append(StrSubstNo(ParagraphTok, Paragraph));
+        Html.Append(BodyCloseTok);
+
+        Html.Append(AfterBody);
         Html.Append(StrSubstNo(SignatureTok, BestRegardsTxt, TeamNameTxt, CompanyName));
         AppendContactBar(Html, CompanyInformation);
         AppendFooter(Html);
@@ -120,20 +162,28 @@ codeunit 70154 "Candidate Ack. Email"
     end;
 
     /// <summary>
+    /// Returns a value encoded for HTML and picked out in the accent color.
+    /// </summary>
+    internal procedure Highlight(Value: Text): Text
+    begin
+        exit(StrSubstNo(HighlightTok, EncodeHtml(Value)));
+    end;
+
+    /// <summary>
     /// Writes the hero banner. The illustration is only included when a URL is configured,
     /// because a broken image placeholder looks worse than no image at all.
     /// </summary>
-    local procedure AppendHero(var Html: TextBuilder)
+    local procedure AppendHero(var Html: TextBuilder; HeroTitle: Text; HeroSubtitle: Text)
     var
         HeroImageUrl: Text;
     begin
         HeroImageUrl := GetHeroImageUrl();
         if HeroImageUrl = '' then begin
-            Html.Append(StrSubstNo(HeroTok, HeroTitleTxt, HeroSubtitleTxt));
+            Html.Append(StrSubstNo(HeroTok, HeroTitle, HeroSubtitle));
             exit;
         end;
 
-        Html.Append(StrSubstNo(HeroImageTok, HeroTitleTxt, HeroSubtitleTxt, EncodeHtml(HeroImageUrl), HeroImageAltTxt));
+        Html.Append(StrSubstNo(HeroImageTok, HeroTitle, HeroSubtitle, EncodeHtml(HeroImageUrl), HeroImageAltTxt));
     end;
 
     /// <summary>
@@ -145,28 +195,6 @@ codeunit 70154 "Candidate Ack. Email"
     local procedure GetHeroImageUrl(): Text
     begin
         exit('');
-    end;
-
-    /// <summary>
-    /// Writes the greeting and the body paragraphs, with the company name and the position
-    /// picked out in the accent color.
-    /// </summary>
-    local procedure AppendIntro(var Html: TextBuilder; Candidate: Record "Candidate"; CompanyName: Text)
-    var
-        CompanyHighlight: Text;
-        PositionHighlight: Text;
-    begin
-        CompanyHighlight := StrSubstNo(HighlightTok, CompanyName);
-        PositionHighlight := StrSubstNo(HighlightTok, EncodeHtml(Candidate."Position Applied For"));
-
-        Html.Append(BodyOpenTok);
-        Html.Append(StrSubstNo(GreetingLineTok, StrSubstNo(GreetingTxt, EncodeHtml(Candidate.GetFullName()))));
-        Html.Append(StrSubstNo(ParagraphTok, StrSubstNo(InterestParaTxt, CompanyHighlight)));
-        Html.Append(StrSubstNo(ParagraphTok, StrSubstNo(ReceivedParaTxt, PositionHighlight)));
-        Html.Append(StrSubstNo(ParagraphTok, ReviewParaTxt));
-        Html.Append(StrSubstNo(ParagraphTok, PatienceParaTxt));
-        Html.Append(StrSubstNo(ParagraphTok, StrSubstNo(ClosingParaTxt, CompanyHighlight)));
-        Html.Append(BodyCloseTok);
     end;
 
     /// <summary>
@@ -245,7 +273,7 @@ codeunit 70154 "Candidate Ack. Email"
     /// Escapes the characters that would otherwise break out of the surrounding markup, so
     /// that data entered on the application form cannot alter the layout of the email.
     /// </summary>
-    local procedure EncodeHtml(Value: Text): Text
+    internal procedure EncodeHtml(Value: Text): Text
     begin
         Value := Value.Replace('&', '&amp;');
         Value := Value.Replace('<', '&lt;');

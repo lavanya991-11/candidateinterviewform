@@ -31,4 +31,13 @@ async function listCandidates(req, res, next) {
   }
 }
 
-module.exports = { createCandidate, listCandidates };
+// Opens a registration link: the form is prefilled with what HR entered in BC.
+async function getRegistration(req, res, next) {
+  try {
+    res.json(await Candidate.getInvitation(req.params.token));
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createCandidate, listCandidates, getRegistration };

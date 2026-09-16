@@ -148,6 +148,10 @@ function validateCandidate(req, res, next) {
     errors.push('Date of birth cannot be in the future');
   }
 
+  // Present when the form was opened from a registration link. Its shape is checked
+  // where it is looked up; here it only has to be text.
+  candidate.registrationToken = str(body.registrationToken).slice(0, 36);
+
   candidate.sameAsCurrent = Boolean(body.sameAsCurrent);
   candidate.currentAddress = cleanAddress(body.currentAddress, 'Current address', errors);
   candidate.permanentAddress = candidate.sameAsCurrent

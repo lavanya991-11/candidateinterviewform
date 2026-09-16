@@ -13,4 +13,10 @@ enum 70126 "Candidate Application Status"
     {
         Caption = 'Submitted';
     }
+    // HR has sent the candidate a registration link that has not been used yet. The
+    // member is named without a space because OData publishes the name, not the caption.
+    value(2; Invited)
+    {
+        Caption = 'Registration Sent';
+    }
 }

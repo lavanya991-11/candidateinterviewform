@@ -6,6 +6,12 @@ const photoZone = document.getElementById('photo-drop');
 
 const DRAFT_KEY = 'candidate-form-draft';
 
+// Set when the form was opened from the registration link HR sent from Business
+// Central. The submission then completes that record instead of creating a new one.
+const registrationToken = new URLSearchParams(window.location.search).get('registration') || '';
+// A link that is invalid or already used leaves nothing to submit.
+let registrationClosed = false;
+
 // Business Central stores a Country/Region code, not a country name, so the option
 // value is the code and only the label is the name. The codes must exist on the
 // Countries/Regions page in Business Central or the record is rejected.
@@ -89,6 +95,7 @@ const joinPhone = (dial, number) => (dial && number ? `(${dial}) ${number}` : nu
 
 function collect() {
   return {
+    registrationToken,
     title: value('title'),
     firstName: value('firstName'),
     middleName: value('middleName'),
@@ -651,6 +658,7 @@ form.addEventListener('submit', async (event) => {
     }
 
     localStorage.removeItem(DRAFT_KEY);
+    if (registrationToken) registrationClosed = true;
     form.reset();
     document.querySelector('#employment-table tbody').innerHTML = '';
     document.querySelector('#references-table tbody').innerHTML = '';
@@ -663,10 +671,51 @@ form.addEventListener('submit', async (event) => {
   } catch {
     setStatus('Could not reach the server. Please try again.', 'err');
   } finally {
-    submitBtn.disabled = false;
+    submitBtn.disabled = registrationClosed;
   }
 });
+
+/* ── registration link ──────────────────────────────────────────── */
+// Prefills what HR entered in Business Central. The email address is the one the link
+// was sent to, so it is shown but not changed; the server keeps it either way.
+async function loadRegistration() {
+  if (!registrationToken) return;
+
+  const closeRegistration = (message) => {
+    registrationClosed = true;
+    submitBtn.disabled = true;
+    setStatus(message, 'err');
+  };
+
+  submitBtn.disabled = true;
+  try {
+    const response = await fetch(`/api/registrations/${encodeURIComponent(registrationToken)}`);
+    const result = await response.json();
+    if (!response.ok) {
+      closeRegistration(result.error || 'This registration link could not be opened.');
+      return;
+    }
+
+    ['title', 'firstName', 'middleName', 'lastName', 'positionAppliedFor'].forEach((name) => {
+      const el = form.elements[name];
+      if (!el || !result[name]) return;
+      el.value = result[name];
+    });
+
+    const email = form.elements.email;
+    email.value = result.email;
+    email.readOnly = true;
+    email.classList.add('mirrored');
+
+    document.getElementById('masthead-note').textContent = 'Please complete your registration '
+      + `below. Your reference number is ${result.entryNo}.`;
+    submitBtn.disabled = false;
+  } catch {
+    closeRegistration('Could not open your registration. Please reload the page to try again.');
+  }
+}
 
 restoreDraft();
 syncPermanentAddress();
 syncOtherQualification();
+loadRegistration();

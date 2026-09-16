@@ -61,6 +61,26 @@ Open <http://localhost:3000> (or whatever `PORT` you set).
 | `GET` | `/health` | Status + whether BC is configured |
 | `POST` | `/api/candidates` | Validate and create a candidate |
 | `GET` | `/api/candidates` | Latest 100 candidates |
+| `GET` | `/api/registrations/:token` | Prefill data for a registration link |
+
+### Registration links (Send for Registration)
+
+HR can invite a candidate from Business Central instead of waiting for them to find the form:
+
+1. In BC, open **Candidate Setup** and set **Registration Form URL** to this app's address
+   (for example `https://candidate-form.onrender.com`).
+2. On a new **Candidate Card**, enter the candidate's **Email** and the **HR Email**. The HR
+   email defaults to the signed-in user's email address. The **ID Number** is the entry number.
+3. Choose **Send for Registration**. The candidate receives a link like
+   `https://…/?registration=<token>`, and the HR email is copied on the same message. The
+   status changes to *Registration Sent*.
+4. The link opens the form with the email locked and the reference number shown. Submitting
+   the form updates that same record, then submits it as usual (the acknowledgement email
+   still goes out).
+
+A link works once. The first write from the form moves the record back to *Draft*, and
+sending the link again replaces the earlier one. The email goes out through the **Default**
+email scenario, the same as the acknowledgement.
 
 ### Local mode
 

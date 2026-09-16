@@ -89,6 +89,33 @@ page 70141 "Candidate Card"
                     ToolTip = 'Specifies the 10 digit mobile number, including the country code. For example, (012) 3456789012.';
                 }
             }
+            group(Registration)
+            {
+                Caption = 'Registration';
+
+                field("Registration Entry No."; Rec."Entry No.")
+                {
+                    ApplicationArea = All;
+                    Caption = 'ID Number';
+                    ToolTip = 'Specifies the reference number of the candidate. The registration email quotes this number.';
+                }
+                field("HR Email"; Rec."HR Email")
+                {
+                    ApplicationArea = All;
+                    ShowMandatory = true;
+                    ToolTip = 'Specifies the email address of the HR contact, who receives a copy of the registration email.';
+                }
+                field("Registration Sent On"; Rec."Registration Sent On")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies when the registration link was last sent to the candidate.';
+                }
+                field("Registration Sent By"; Rec."Registration Sent By")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the user who last sent the registration link.';
+                }
+            }
             group(CurrentAddress)
             {
                 Caption = 'Current Address';
@@ -360,6 +387,20 @@ page 70141 "Candidate Card"
     {
         area(Processing)
         {
+            action(SendForRegistration)
+            {
+                ApplicationArea = All;
+                Caption = 'Send for Registration';
+                Image = SendTo;
+                ToolTip = 'Email the candidate a link to the online application form, with a copy to the HR email address.';
+
+                trigger OnAction()
+                begin
+                    CurrPage.SaveRecord();
+                    Rec.SendForRegistration();
+                    CurrPage.Update(false);
+                end;
+            }
             action(SubmitApplication)
             {
                 ApplicationArea = All;
@@ -381,6 +422,7 @@ page 70141 "Candidate Card"
             {
                 Caption = 'Process';
 
+                actionref(SendForRegistration_Promoted; SendForRegistration) { }
                 actionref(SubmitApplication_Promoted; SubmitApplication) { }
             }
         }

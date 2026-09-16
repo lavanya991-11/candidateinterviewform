@@ -92,6 +92,17 @@ page 70136 "Candidate List"
                     ApplicationArea = All;
                     ToolTip = 'Specifies the date on which the candidate is interviewed.';
                 }
+                field("HR Email"; Rec."HR Email")
+                {
+                    ApplicationArea = All;
+                    ToolTip = 'Specifies the email address of the HR contact for the candidate.';
+                }
+                field("Registration Sent On"; Rec."Registration Sent On")
+                {
+                    ApplicationArea = All;
+                    Visible = false;
+                    ToolTip = 'Specifies when the registration link was last sent to the candidate.';
+                }
                 field("Application Date"; Rec."Application Date")
                 {
                     ApplicationArea = All;
@@ -118,6 +129,35 @@ page 70136 "Candidate List"
                     ApplicationArea = All;
                     ToolTip = 'Specifies how many files the candidate uploaded.';
                 }
+            }
+        }
+    }
+
+    actions
+    {
+        area(Processing)
+        {
+            action(SendForRegistration)
+            {
+                ApplicationArea = All;
+                Caption = 'Send for Registration';
+                Image = SendTo;
+                ToolTip = 'Email the selected candidate a link to the online application form, with a copy to the HR email address.';
+
+                trigger OnAction()
+                begin
+                    Rec.SendForRegistration();
+                    CurrPage.Update(false);
+                end;
+            }
+        }
+        area(Promoted)
+        {
+            group(Category_Process)
+            {
+                Caption = 'Process';
+
+                actionref(SendForRegistration_Promoted; SendForRegistration) { }
             }
         }
     }

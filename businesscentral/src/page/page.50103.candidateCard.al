@@ -79,6 +79,7 @@ page 70141 "Candidate Card"
                 field("Email"; Rec."Email")
                 {
                     ApplicationArea = All;
+                    Caption = 'Candidate Email Address';
                     ShowMandatory = true;
                     ToolTip = 'Specifies the email address used to contact the candidate.';
                 }

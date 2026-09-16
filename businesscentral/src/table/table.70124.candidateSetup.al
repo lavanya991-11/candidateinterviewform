@@ -12,6 +12,11 @@ table 70124 "Candidate Setup"
         {
             Caption = 'Primary Key';
         }
+        field(2; "Candidate Nos."; Code[20])
+        {
+            Caption = 'Candidate Nos.';
+            TableRelation = "No. Series";
+        }
         field(10; "Registration Form URL"; Text[250])
         {
             Caption = 'Registration Form URL';

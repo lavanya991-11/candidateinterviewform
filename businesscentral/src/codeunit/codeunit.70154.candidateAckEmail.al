@@ -66,8 +66,8 @@ codeunit 70154 "Candidate Ack. Email"
         HttpSchemeTok: Label 'http', Locked = true;
 
     /// <summary>
-    /// Emails the candidate a confirmation that the application was received. Does nothing
-    /// when the candidate did not provide an email address.
+    /// Emails the candidate a confirmation that the application was received, with a copy
+    /// to the HR email address. Does nothing when the candidate did not provide an email address.
     /// </summary>
     /// <param name="Candidate">The candidate to acknowledge.</param>
     procedure Send(var Candidate: Record "Candidate")
@@ -75,6 +75,9 @@ codeunit 70154 "Candidate Ack. Email"
         CompanyInformation: Record "Company Information";
         EmailImpl: Codeunit Email;
         EmailMessage: Codeunit "Email Message";
+        ToRecipients: List of [Text];
+        CcRecipients: List of [Text];
+        BccRecipients: List of [Text];
     begin
         if Candidate."Email" = '' then
             exit;
@@ -82,11 +85,18 @@ codeunit 70154 "Candidate Ack. Email"
         if not CompanyInformation.Get() then
             CompanyInformation.Init();
 
+        ToRecipients.Add(Candidate."Email");
+        // HR is told about the submission through a copy of the same email.
+        if Candidate."HR Email" <> '' then
+            CcRecipients.Add(Candidate."HR Email");
+
         EmailMessage.Create(
-            Candidate."Email",
+            ToRecipients,
             StrSubstNo(SubjectTxt, Candidate."Position Applied For", CompanyInformation.Name),
             BuildBody(Candidate, CompanyInformation),
-            true);
+            true,
+            CcRecipients,
+            BccRecipients);
 
         EmailImpl.Send(EmailMessage, Enum::"Email Scenario"::Default);
     end;

@@ -1,5 +1,5 @@
 /// <summary>
-/// Sets up where candidate registration links point to.
+/// Sets up how candidates are numbered and where registration links point to.
 /// </summary>
 page 70155 "Candidate Setup"
 {
@@ -15,6 +15,17 @@ page 70155 "Candidate Setup"
     {
         area(Content)
         {
+            group(Numbering)
+            {
+                Caption = 'Numbering';
+
+                field("Candidate Nos."; Rec."Candidate Nos.")
+                {
+                    ApplicationArea = All;
+                    ShowMandatory = true;
+                    ToolTip = 'Specifies the number series that gives a new candidate its Entry No. The series must use digits only, for example 1000 to 999999, because the Entry No. is a number.';
+                }
+            }
             group(Registration)
             {
                 Caption = 'Registration';

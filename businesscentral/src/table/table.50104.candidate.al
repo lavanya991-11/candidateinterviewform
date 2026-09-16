@@ -16,7 +16,7 @@ table 70120 "Candidate"
         field(1; "Entry No."; Integer)
         {
             Caption = 'Entry No.';
-            AutoIncrement = true;
+            // Assigned on insert from the Candidate Nos. number series on Candidate Setup.
             Editable = false;
         }
         field(2; "Candidate Name"; Text[100])
@@ -391,6 +391,7 @@ table 70120 "Candidate"
     }
 
     var
+        NonNumericEntryNoErr: Label 'Number series %1 returned %2. The candidate Entry No. is a number, so the series must use digits only, such as 1000.', Comment = '%1 = No. Series code, %2 = Number returned by the series';
         DateOfBirthInFutureErr: Label 'The date of birth cannot be later than today.';
         TestDateInFutureErr: Label 'The most recent test date cannot be later than today.';
         TestDateWithoutCertErr: Label 'You cannot enter a test date when no English language certification was attempted.';
@@ -413,6 +414,8 @@ table 70120 "Candidate"
 
     trigger OnInsert()
     begin
+        if "Entry No." = 0 then
+            "Entry No." := GetNextEntryNo();
         if "Application Date" = 0D then
             "Application Date" := Today();
         if "HR Email" = '' then
@@ -468,6 +471,31 @@ table 70120 "Candidate"
         CandidateRegistration: Codeunit "Candidate Registration";
     begin
         CandidateRegistration.SendInvitation(Rec);
+    end;
+
+    /// <summary>
+    /// Returns the next Entry No. from the Candidate Nos. number series. The series must
+    /// hand out digits only, because Entry No. is a number. Until a series is set up,
+    /// the number follows on from the last candidate, so the application form keeps working.
+    /// </summary>
+    local procedure GetNextEntryNo(): Integer
+    var
+        CandidateSetup: Record "Candidate Setup";
+        LastCandidate: Record "Candidate";
+        NoSeries: Codeunit "No. Series";
+        NextNo: Code[20];
+        NextEntryNo: Integer;
+    begin
+        if CandidateSetup.Get() and (CandidateSetup."Candidate Nos." <> '') then begin
+            NextNo := NoSeries.GetNextNo(CandidateSetup."Candidate Nos.");
+            if not Evaluate(NextEntryNo, NextNo) or (NextEntryNo <= 0) then
+                Error(NonNumericEntryNoErr, CandidateSetup."Candidate Nos.", NextNo);
+            exit(NextEntryNo);
+        end;
+
+        if LastCandidate.FindLast() then
+            exit(LastCandidate."Entry No." + 1);
+        exit(1);
     end;
 
     /// <summary>

@@ -1,10 +1,9 @@
 /// <summary>
-/// Lists every candidate, whatever the status. Day-to-day work is done on the
-/// Registration Invitations and Candidate Applications lists.
+/// Lists the submitted and draft job applications.
 /// </summary>
 page 70136 "Candidate List"
 {
-    Caption = 'All Candidates';
+    Caption = 'Candidates';
     PageType = List;
     ApplicationArea = All;
     UsageCategory = Lists;
@@ -130,6 +129,35 @@ page 70136 "Candidate List"
                     ApplicationArea = All;
                     ToolTip = 'Specifies how many files the candidate uploaded.';
                 }
+            }
+        }
+    }
+
+    actions
+    {
+        area(Processing)
+        {
+            action(SendForRegistration)
+            {
+                ApplicationArea = All;
+                Caption = 'Send for Registration';
+                Image = SendTo;
+                ToolTip = 'Email the selected candidate a link to the online application form, with a copy to the HR email address.';
+
+                trigger OnAction()
+                begin
+                    Rec.SendForRegistration();
+                    CurrPage.Update(false);
+                end;
+            }
+        }
+        area(Promoted)
+        {
+            group(Category_Process)
+            {
+                Caption = 'Process';
+
+                actionref(SendForRegistration_Promoted; SendForRegistration) { }
             }
         }
     }

@@ -103,8 +103,7 @@ page 70141 "Candidate Card"
                 field("HR Email"; Rec."HR Email")
                 {
                     ApplicationArea = All;
-                    ShowMandatory = true;
-                    ToolTip = 'Specifies the email address of the HR contact, who receives a copy of the registration email.';
+                    ToolTip = 'Specifies the email address of the HR contact. When it is filled in, HR receives a copy of the registration email.';
                 }
                 field("Registration Sent On"; Rec."Registration Sent On")
                 {

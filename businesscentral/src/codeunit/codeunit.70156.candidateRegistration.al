@@ -1,7 +1,7 @@
 /// <summary>
 /// Sends a candidate the personal link to the online application form. HR enters the
-/// candidate email and the HR email on the Candidate Card, and the link goes to the
-/// candidate with a copy to HR. When the candidate submits the form, it updates this
+/// candidate email on the Candidate Card, and the link goes to the candidate, with a
+/// copy to HR when an HR email is filled in. When the candidate submits the form, it updates this
 /// same record instead of creating a new one.
 /// </summary>
 codeunit 70156 "Candidate Registration"
@@ -22,14 +22,15 @@ codeunit 70156 "Candidate Registration"
         AlreadySubmittedErr: Label 'The application of %1 was already submitted on %2, so there is nothing left to register.', Comment = '%1 = Candidate name, %2 = Submission date and time';
         ResendQst: Label 'A registration link was already sent on %1. Do you want to send a new link? The earlier link will stop working.', Comment = '%1 = Date and time the link was sent';
         SendFailedErr: Label 'The registration link could not be sent. %1', Comment = '%1 = Error message from the email account';
-        SentMsg: Label 'The registration link was sent to %1, with a copy to %2.', Comment = '%1 = Candidate email, %2 = HR email';
+        SentMsg: Label 'The registration link was sent to %1.', Comment = '%1 = Candidate email';
+        SentWithCopyMsg: Label 'The registration link was sent to %1, with a copy to %2.', Comment = '%1 = Candidate email, %2 = HR email';
         RegistrationQueryTok: Label 'registration=%1', Locked = true;
         LinkTok: Label '<a href="%1" style="color:#2B6CB8;word-break:break-all;">%1</a>', Locked = true;
         ButtonTok: Label '<tr><td align="center" style="padding:4px 32px 22px 32px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;"><tr><td align="center" bgcolor="#2B6CB8" style="background-color:#2B6CB8;border-radius:6px;"><a href="%1" style="display:inline-block;padding:12px 28px;font-family:Segoe UI,Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none;">%2</a></td></tr></table></td></tr>', Locked = true;
 
     /// <summary>
-    /// Emails the candidate a new registration link, with a copy to the HR email address,
-    /// and marks the record as Registration Sent. Asks first when a link was already sent,
+    /// Emails the candidate a new registration link, with a copy to the HR email address
+    /// when one is filled in, and marks the record as Registration Sent. Asks first when a link was already sent,
     /// because the new link replaces the earlier one.
     /// </summary>
     /// <param name="Candidate">The candidate to invite.</param>
@@ -57,7 +58,8 @@ codeunit 70156 "Candidate Registration"
         RegistrationLink := GetRegistrationLink(Candidate);
 
         ToRecipients.Add(Candidate."Email");
-        CcRecipients.Add(Candidate."HR Email");
+        if Candidate."HR Email" <> '' then
+            CcRecipients.Add(Candidate."HR Email");
         EmailMessage.Create(
             ToRecipients,
             StrSubstNo(SubjectTxt, CompanyInformation.Name),
@@ -78,7 +80,10 @@ codeunit 70156 "Candidate Registration"
         Candidate.Modify(true);
 
         if GuiAllowed() then
-            Message(SentMsg, Candidate."Email", Candidate."HR Email");
+            if Candidate."HR Email" <> '' then
+                Message(SentWithCopyMsg, Candidate."Email", Candidate."HR Email")
+            else
+                Message(SentMsg, Candidate."Email");
     end;
 
     /// <summary>
@@ -162,6 +167,5 @@ codeunit 70156 "Candidate Registration"
             Error(AlreadySubmittedErr, Candidate."Candidate Name", Candidate."Submitted On");
 
         Candidate.TestField("Email");
-        Candidate.TestField("HR Email");
     end;
 }

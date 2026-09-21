@@ -676,23 +676,49 @@ form.addEventListener('submit', async (event) => {
 });
 
 /* ── registration link ──────────────────────────────────────────── */
+// A registration link is single use: submitting the form moves the record on in
+// Business Central, so opening the same link a second time is refused. The refusal
+// takes over the page, because a blank form the applicant cannot submit reads as a
+// link that simply did not open.
+//
+// The server already words the sentence under the heading; only the heading is
+// decided here, from the code it sends with the refusal.
+const CLOSED_TITLES = {
+  REGISTRATION_USED: 'Your application has already been submitted',
+  REGISTRATION_NOT_FOUND: 'This registration link is no longer valid',
+  REGISTRATION_UNAVAILABLE: 'Registration is temporarily unavailable',
+};
+
+function closeRegistration(code, message) {
+  registrationClosed = true;
+  submitBtn.disabled = true;
+
+  document.getElementById('link-notice-title').textContent = CLOSED_TITLES[code]
+    || 'This registration link cannot be opened';
+  document.getElementById('link-notice-text').textContent = message
+    || 'This registration link could not be opened.';
+  document.getElementById('link-notice').hidden = false;
+
+  // The masthead invites the applicant to fill the form in, which is no longer true.
+  document.getElementById('masthead-note').textContent = 'There is nothing to fill in here.';
+
+  // Hidden rather than removed, so nothing else on the page has to know about it.
+  form.hidden = true;
+  document.body.classList.add('is-closed');
+  window.scrollTo({ top: 0 });
+}
+
 // Prefills what HR entered in Business Central. The email address is the one the link
 // was sent to, so it is shown but not changed; the server keeps it either way.
 async function loadRegistration() {
   if (!registrationToken) return;
-
-  const closeRegistration = (message) => {
-    registrationClosed = true;
-    submitBtn.disabled = true;
-    setStatus(message, 'err');
-  };
 
   submitBtn.disabled = true;
   try {
     const response = await fetch(`/api/registrations/${encodeURIComponent(registrationToken)}`);
     const result = await response.json();
     if (!response.ok) {
-      closeRegistration(result.error || 'This registration link could not be opened.');
+      closeRegistration(result.code, result.error);
       return;
     }
 
@@ -711,7 +737,7 @@ async function loadRegistration() {
       + `below. Your reference number is ${result.entryNo}.`;
     submitBtn.disabled = false;
   } catch {
-    closeRegistration('Could not open your registration. Please reload the page to try again.');
+    closeRegistration('', 'Could not open your registration. Please reload the page to try again.');
   }
 }
 

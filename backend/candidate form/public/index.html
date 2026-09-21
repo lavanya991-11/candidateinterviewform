@@ -55,6 +55,20 @@
       </div>
     </header>
 
+    <!-- Shown instead of the form when a registration link cannot be opened: already
+         used, replaced by a newer one, or unknown. The form stays in the page but is
+         hidden, because there is nothing useful the holder of a dead link can fill in. -->
+    <section class="notice" id="link-notice" hidden>
+      <div class="notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="9" /><path d="M9 12.5l2 2 4.5-4.5" />
+        </svg>
+      </div>
+      <h2 id="link-notice-title">This registration link cannot be opened</h2>
+      <p id="link-notice-text"></p>
+      <p class="notice-hint">You can close this page. If you think this is a mistake, reply to the email we sent you.</p>
+    </section>
+
     <form id="application-form" novalidate>
 
       <!-- 1. personal -->

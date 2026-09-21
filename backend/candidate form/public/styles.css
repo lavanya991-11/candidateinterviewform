@@ -277,6 +277,30 @@ fieldset.invalid legend, .table-wrap.invalid + .btn-add { color: var(--err); }
 }
 #error-list:empty { display: none; }
 
+/* ── dead registration link ───────────────────── */
+/* Replaces the form, so the message is the first thing on screen rather than a line
+   of status text below a form the applicant can no longer submit. */
+.notice {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 34px 26px 30px;
+  text-align: center;
+}
+.notice[hidden] { display: none; }
+.notice-icon {
+  width: 52px; height: 52px; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--blue-soft); color: var(--blue);
+}
+.notice-icon svg { width: 26px; height: 26px; }
+.notice h2 { margin: 0; font-size: 18px; color: var(--ink); }
+.notice p { max-width: 460px; margin: 10px auto 0; font-size: 14px; line-height: 1.65; color: var(--label); }
+.notice .notice-hint { margin-top: 16px; font-size: 12px; color: var(--muted); }
+/* The sidebar is the photo upload and the section jump list ─ both dead ends here. */
+body.is-closed .sidebar { display: none; }
+body.is-closed .shell { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+
 /* ── responsive ───────────────────────────────────────── */
 @media (max-width: 1080px) {
   .shell { grid-template-columns: 1fr; }

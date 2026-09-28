@@ -695,8 +695,10 @@ function closeRegistration(code, message) {
 
   document.getElementById('link-notice-title').textContent = CLOSED_TITLES[code]
     || 'This registration link cannot be opened';
-  document.getElementById('link-notice-text').textContent = message
-    || 'This registration link could not be opened.';
+  const noticeText = document.getElementById('link-notice-text');
+  noticeText.textContent = message || 'This registration link could not be opened.';
+  // The heading already says the application is in; the sentence under it adds nothing.
+  noticeText.hidden = code === 'REGISTRATION_USED';
   document.getElementById('link-notice').hidden = false;
 
   // The masthead invites the applicant to fill the form in, which is no longer true.

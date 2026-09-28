@@ -47,6 +47,7 @@ page 70141 "Candidate Card"
                 field("Last Name"; Rec."Last Name")
                 {
                     ApplicationArea = All;
+                    ShowMandatory = true;
                     ToolTip = 'Specifies the last name of the candidate.';
                 }
                 field("Candidate Name"; Rec."Candidate Name")
@@ -396,6 +397,8 @@ page 70141 "Candidate Card"
 
                 trigger OnAction()
                 begin
+                    Rec.TestField("First Name");
+                    Rec.TestField("Last Name");
                     CurrPage.SaveRecord();
                     Rec.SendForRegistration();
                     CurrPage.Update(false);
@@ -405,6 +408,7 @@ page 70141 "Candidate Card"
             {
                 ApplicationArea = All;
                 Caption = 'Review && Submit Application';
+                Visible = false;
                 Image = Approve;
                 ToolTip = 'Check the required details and submit the application.';
 
